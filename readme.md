@@ -1,6 +1,6 @@
 project-root/
 │
-├── backend/                              # 后端代码 (Python 实现)
+├── backend/                              # 后端代码 (Python 实现) 
 │   ├── app/                              # 核心后端应用代码
 │   │   ├── main.py                       # 主入口文件 (启动后端服务)
 │   │   ├── routes/                       # 所有路由定义
