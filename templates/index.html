@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Chat with Models</title>
+  <script src="static/script.js" defer></script>
+</head>
+<body>
+  <h2>模型选择器</h2>
+  <form id="chat-form">
+    <select id="model" name="model">
+      {% for m in models %}
+        <option value="{{ m }}">{{ m }}</option>
+      {% endfor %}
+    </select>
+    <br><br>
+    <textarea name="prompt" id="prompt" rows="5" cols="60" placeholder="输入你的问题..."></textarea>
+    <br>
+    <button type="submit">发送</button>
+  </form>
+
+  <hr>
+  <h3>模型回复：</h3>
+  <pre id="response"></pre>
+</body>
+</html>
