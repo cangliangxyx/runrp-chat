@@ -8,43 +8,61 @@
   <script src="/static/script.js" defer></script>
 </head>
 <body>
-  <div class="app">
-    <!-- 顶部栏 -->
-    <header class="topbar">
-      <div class="brand">runrp-chat</div>
-      <div class="controls">
-        <label class="model-label" for="model">模型</label>
-        <select id="model" name="model" class="model-select">
-          {% for m in models %}
-            <option value="{{ m }}">{{ m }}</option>
-          {% endfor %}
-        </select>
+  <div class="app with-sidebar">
+    <!-- 左侧边栏（历史对话） -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">历史对话</div>
+        <button class="sidebar-new" id="btn-new">新对话</button>
       </div>
-    </header>
-
-    <!-- 主体：对话区 -->
-    <main class="main">
-      <div class="chat-container">
-        <!-- 历史对话列表 -->
-        <div id="messages" class="chat-messages" aria-live="polite" aria-atomic="false"></div>
-        <!-- 为兼容旧脚本/接口的保留元素（不再直接使用），由脚本动态填充 -->
-        <pre id="response" style="display:none;"></pre>
+      <nav class="sidebar-list" id="conv-list" aria-label="会话列表">
+        <!-- 会话项由脚本注入 -->
+      </nav>
+      <div class="sidebar-footer">
+        <button class="sidebar-clear" id="btn-clear-all" title="清空全部历史">清空全部</button>
+        <small class="muted">本地保存 · 自动持久化</small>
       </div>
-    </main>
+    </aside>
 
-    <!-- 底部输入栏 -->
-    <footer class="bottombar">
-      <form id="chat-form" class="chat-form">
-        <textarea
-          name="prompt"
-          id="prompt"
-          rows="1"
-          placeholder="给我一个问题或指令，按回车发送，Shift+Enter 换行"
-        ></textarea>
-        <button type="submit" class="send-btn">发送</button>
-      </form>
-      <div class="hint">AI 可能会产生不准确的内容，请自行判断。</div>
-    </footer>
+    <div class="content">
+      <!-- 顶部栏 -->
+      <header class="topbar">
+        <button class="menu-btn" id="btn-toggle" aria-label="切换侧栏">☰</button>
+        <div class="brand">runrp-chat</div>
+        <div class="controls">
+          <label class="model-label" for="model">模型</label>
+          <select id="model" name="model" class="model-select">
+            {% for m in models %}
+              <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </header>
+
+      <!-- 主体：对话区 -->
+      <main class="main">
+        <div class="chat-container">
+          <!-- 历史对话列表（消息） -->
+          <div id="messages" class="chat-messages" aria-live="polite" aria-atomic="false"></div>
+          <!-- 兼容保留（不使用） -->
+          <pre id="response" style="display:none;"></pre>
+        </div>
+      </main>
+
+      <!-- 底部输入栏 -->
+      <footer class="bottombar">
+        <form id="chat-form" class="chat-form">
+          <textarea
+            name="prompt"
+            id="prompt"
+            rows="1"
+            placeholder="给我一个问题或指令，按回车发送，Shift+Enter 换行"
+          ></textarea>
+          <button type="submit" class="send-btn">发送</button>
+        </form>
+        <div class="hint">AI 可能会产生不准确的内容，请自行判断。</div>
+      </footer>
+    </div>
   </div>
 </body>
 </html>

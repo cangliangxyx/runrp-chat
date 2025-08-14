@@ -8,6 +8,9 @@
   --ai-bubble: #131b2e;
   --btn: #1f6feb;
   --btn-hover: #2b77f0;
+
+  --sidebar-bg: #0c1324;
+  --sidebar-w: 280px;
 }
 
 * { box-sizing: border-box; }
@@ -20,7 +23,123 @@ html, body {
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-.app {
+/* 带侧栏布局 */
+.app.with-sidebar {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: 100dvh;
+}
+
+/* 侧栏 */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 4px 4px 8px;
+}
+
+.sidebar-title { font-weight: 600; }
+
+.sidebar-new {
+  border: 1px solid var(--btn);
+  background: var(--btn);
+  color: white;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.sidebar-new:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
+
+.sidebar-list {
+  flex: 1;
+  overflow: auto;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+.conv-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.conv-item:hover { background: rgba(255,255,255,0.04); }
+.conv-item.active { border-color: var(--border); background: rgba(255,255,255,0.06); }
+.conv-title {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 14px;
+  color: var(--text);
+}
+.conv-meta { font-size: 12px; color: var(--muted); }
+
+/* 删除按钮样式 */
+.conv-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.btn-icon {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.btn-icon:hover {
+  color: #ff9aa2;
+  border-color: rgba(255, 154, 162, 0.3);
+  background: rgba(255, 154, 162, 0.08);
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+.sidebar-clear {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.sidebar-clear:hover { background: #121a2c; }
+
+.muted { color: var(--muted); }
+
+/* 内容区（右侧） */
+.content {
   display: grid;
   grid-template-rows: auto 1fr auto;
   height: 100dvh;
@@ -30,19 +149,27 @@ html, body {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(180deg, rgba(122,162,247,0.06), transparent 60%);
 }
 
+.menu-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.menu-btn:hover { background: #121a2c; }
+
 .brand { font-weight: 600; letter-spacing: 0.2px; }
 
-.controls { display: flex; align-items: center; gap: 8px; }
-
+.controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .model-label { font-size: 12px; color: var(--muted); }
-
 .model-select {
   appearance: none;
   background: var(--panel);
@@ -57,7 +184,7 @@ html, body {
 .main { overflow: auto; }
 
 .chat-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 16px 16px 120px; /* 预留底部输入区高度 */
 }
@@ -70,12 +197,8 @@ html, body {
   overflow-anchor: auto;
 }
 
-/* 单条消息：左右交替布局（无头像、无角色标签） */
-.msg {
-  display: flex;
-  width: 100%;
-}
-
+/* 消息：左右交替（无头像） */
+.msg { display: flex; width: 100%; }
 .msg .bubble {
   max-width: min(72ch, 85%);
   padding: 12px 14px;
@@ -85,8 +208,6 @@ html, body {
   word-break: break-word;
   line-height: 1.7;
 }
-
-/* 用户消息靠右，右侧圆角更圆润 */
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
   background: var(--user-bubble);
@@ -95,8 +216,6 @@ html, body {
   border-bottom-right-radius: 6px;
   border-bottom-left-radius: 16px;
 }
-
-/* 助手消息靠左，左侧圆角更圆润 */
 .msg.assistant { justify-content: flex-start; }
 .msg.assistant .bubble {
   background: var(--ai-bubble);
@@ -117,7 +236,7 @@ html, body {
 }
 
 .chat-form {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -137,7 +256,6 @@ html, body {
   color: var(--text);
   outline: none;
 }
-
 #prompt::placeholder { color: var(--muted); }
 
 .send-btn {
@@ -150,23 +268,46 @@ html, body {
   cursor: pointer;
   font-weight: 600;
 }
-
-.send-btn:hover {
-  background: var(--btn-hover);
-  border-color: var(--btn-hover);
-}
+.send-btn:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
 
 .hint {
-  max-width: 800px;
+  max-width: 900px;
   margin: 8px auto 0;
   font-size: 12px;
   color: var(--muted);
   text-align: center;
 }
 
-/* 自适应 */
-@media (max-width: 640px) {
-  .controls { display: none; }
-  .chat-container { padding: 12px 12px 120px; }
-  .msg .bubble { max-width: 92%; }
+/* 响应式：小屏侧栏折叠为抽屉 */
+@media (max-width: 900px) {
+  .app.with-sidebar {
+    grid-template-columns: 0 1fr;
+  }
+  .sidebar {
+    position: fixed;
+    z-index: 20;
+    width: var(--sidebar-w);
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    height: 100dvh;
+  }
+  .sidebar.open {
+    transform: translateX(0%);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+  }
 }
+
+/* 补充：侧栏编辑状态输入框样式 */
+.title-input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  outline: none;
+  font-size: 14px;
+}
+.title-input::placeholder { color: var(--muted); }
+
+/* 侧栏操作按钮已有样式：.btn-icon，可复用 */
