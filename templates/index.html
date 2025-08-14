@@ -1,26 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>Chat with Models</title>
-  <script src="static/script.js" defer></script>
+  <title>runrp-chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/script.js" defer></script>
 </head>
 <body>
-  <h2>模型选择器</h2>
-  <form id="chat-form">
-    <select id="model" name="model">
-      {% for m in models %}
-        <option value="{{ m }}">{{ m }}</option>
-      {% endfor %}
-    </select>
-    <br><br>
-    <textarea name="prompt" id="prompt" rows="5" cols="60" placeholder="输入你的问题..."></textarea>
-    <br>
-    <button type="submit">发送</button>
-  </form>
+  <div class="app">
+    <!-- 顶部栏 -->
+    <header class="topbar">
+      <div class="brand">runrp-chat</div>
+      <div class="controls">
+        <label class="model-label" for="model">模型</label>
+        <select id="model" name="model" class="model-select">
+          {% for m in models %}
+            <option value="{{ m }}">{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </header>
 
-  <hr>
-  <h3>模型回复：</h3>
-  <pre id="response"></pre>
+    <!-- 主体：对话区 -->
+    <main class="main">
+      <div class="chat-container">
+        <!-- 历史对话列表 -->
+        <div id="messages" class="chat-messages" aria-live="polite" aria-atomic="false"></div>
+        <!-- 为兼容旧脚本/接口的保留元素（不再直接使用），由脚本动态填充 -->
+        <pre id="response" style="display:none;"></pre>
+      </div>
+    </main>
+
+    <!-- 底部输入栏 -->
+    <footer class="bottombar">
+      <form id="chat-form" class="chat-form">
+        <textarea
+          name="prompt"
+          id="prompt"
+          rows="1"
+          placeholder="给我一个问题或指令，按回车发送，Shift+Enter 换行"
+        ></textarea>
+        <button type="submit" class="send-btn">发送</button>
+      </form>
+      <div class="hint">AI 可能会产生不准确的内容，请自行判断。</div>
+    </footer>
+  </div>
 </body>
 </html>
