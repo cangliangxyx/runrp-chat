@@ -41,8 +41,10 @@ async def stream_chat(model: str, prompt: str):
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "stream": True,
-        "temperature": temperature
+        "temperature": temperature,
     }
+
+    # print(json.dumps(data, ensure_ascii=False, indent=2))
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -87,6 +89,4 @@ if __name__ == "__main__":
         async for chunk in stream_chat("gpt-5-mini", "你好，请简单说一句话"):
             print(chunk, end="", flush=True)
         print("\n测试完成")
-
-
     asyncio.run(test())

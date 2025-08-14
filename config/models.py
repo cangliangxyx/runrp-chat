@@ -14,13 +14,13 @@ DEFAULT_MODELS = {
     "gpt-5-mini": {
         "label": "gpt-5-mini-2025-08-07",
         "supports_streaming": True,
-        "default_temperature": 0.7,
+        "default_temperature": 0.4,
         "client_key": "link_api",
     },
     "gpt-5": {
         "label": "gpt-5",
         "supports_streaming": True,
-        "default_temperature": 0.7,
+        "default_temperature": 0.4,
         "client_key": "link_api",
     }
 }
