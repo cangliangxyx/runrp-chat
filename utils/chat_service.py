@@ -21,17 +21,15 @@ async def stream_chat(
     prompt: str,
     history: list[dict] | None = None,
     memory: str | None = None,
-    world_state: dict | None = None,
-    conversation_id: str | None = None,
+    world_state: dict | None = None
 ):
-    logger.info(f"[call] stream_chat called | model={model} | prompt_preview={prompt[:80]} | conv={conversation_id or '-'}")
-    print(f"[chat_service] stream_chat start, model={model}, conv={conversation_id or '-'}")
 
     model_config = model_registry(model)
     if not model_config:
         raise HTTPException(status_code=400, detail=f"模型 `{model}` 未注册")
     if not model_config.get("supports_streaming", False):
         raise HTTPException(status_code=400, detail=f"模型 `{model}` 不支持流式返回")
+    model_label = model_config.get("label")
     client_key = model_config.get("client_key")
     client_config = CLIENT_CONFIGS.get(client_key)
     if not client_config:
@@ -42,7 +40,7 @@ async def stream_chat(
     temperature = model_config.get("default_temperature", 0.7)
 
     url = base_url
-    logger.info(f"[call] 请求目标: URL={url}, 温度={temperature}")
+    logger.info(f"[call] model: model_label={model_label}, 请求目标: URL={url}, 温度={temperature}")
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
@@ -64,10 +62,6 @@ async def stream_chat(
 
     # 计算最终摘要与世界切片
     memory_text = summarize_history_if_needed(turns, memory, threshold=SUMMARY_THRESHOLD)
-    if memory_text:
-        logger.info(f"[call] 使用摘要: {memory_text[:100]}")
-    else:
-        logger.info("[call] 无摘要或未触发生成")
 
     world_text = world_text_probe if world_text_probe else slice_world_state(world_state)
 
@@ -82,7 +76,7 @@ async def stream_chat(
     )
 
     data = {
-        "model": model,
+        "model": model_label,
         "messages": messages,
         "stream": True,
         "temperature": min(max(temperature, 0.0), 1.5),
@@ -90,23 +84,9 @@ async def stream_chat(
         "top_p": 1.0,
     }
 
-    # 请求体简要预览（头尾）
-    try:
-        preview = {
-            "model": data["model"],
-            "stream": data["stream"],
-            "temperature": data["temperature"],
-            "messages_head": messages[:2],
-            "messages_tail": messages[-2:],
-        }
-        # logger.info("请求体简要预览:\n" + json.dumps(preview, ensure_ascii=False, indent=2))
-    except Exception:
-        logger.info("请求体预览生成失败（可能含不可序列化对象）")
-
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             async with client.stream("POST", url, json=data, headers=headers) as resp:
-                logger.info(f"[http] 上游状态码: {resp.status_code}")
                 print(f"[chat_service] upstream status={resp.status_code}")
 
                 if resp.status_code != 200:
@@ -123,7 +103,6 @@ async def stream_chat(
                     if line.startswith("data: "):
                         chunk = line[6:]
                         if chunk.strip() == "[DONE]":
-                            logger.info("[http] 收到 [DONE]")
                             break
                         try:
                             parsed = json.loads(chunk)
@@ -142,8 +121,6 @@ async def stream_chat(
 
 if __name__ == "__main__":
     async def test():
-        print("开始测试...")
-        async for chunk in stream_chat("grok-4", "测试内容"):
+        async for chunk in stream_chat("claude-opus-4", "你好，我使用的模型版本是多少"):
             print(chunk, end="", flush=True)
-        print("\n测试完成")
     asyncio.run(test())

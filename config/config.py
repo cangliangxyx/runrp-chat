@@ -7,10 +7,10 @@ CLIENT_CONFIGS = {
     },
     "link_api": {
         "base_url": "https://api.linkapi.org/v1/chat/completions",
-        "api_key": "sk-HUDUrKEoiCZ8bIVlAd3aD88727B5426f8b2d317f202213Dd"
+        "api_key": "sk-0nYpiWOSzvn4plFp7iintyi4KzVn9NzcUpwuGmkcJ1xW2LKX"
     },
-    "link_api_cc": {
-        "base_url": "https://api.linkapi.org/v1/chat/completions",
-        "api_key": "sk-6itPH5iyMCfWYnpK5x72rrlU13GjJRRx71DIfdlsXsFJOUUI"
+    "cloudapi": {
+        "base_url": "https://chat.cloudapi.vip/v1/chat/completions",
+        "api_key": "sk-J4J5HnTXJHqDDYi4mwgAl2IPPflXZSRerKwyKKtPiIC1aTHQ"
     }
 }

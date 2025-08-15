@@ -61,8 +61,7 @@ async def chat(
             prompt=prompt,
             history=parsed_history,
             memory=parsed_memory if isinstance(parsed_memory, str) else None,
-            world_state=parsed_world_state,
-            conversation_id=conversation_id,
+            world_state=parsed_world_state
         )
         print("创建了流式生成器")
         return StreamingResponse(

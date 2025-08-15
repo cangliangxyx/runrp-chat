@@ -28,6 +28,18 @@ DEFAULT_MODELS = {
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_key": "link_api",
+    },
+    "gemini-2.5-pro": {
+        "label": "gemini-2.5-pro-nothinking",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_key": "link_api",
+    },
+    "claude-sonnet-4": {
+        "label": "claude-sonnet-4-20250514",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_key": "cloudapi",
     }
 }
 
