@@ -121,6 +121,6 @@ async def stream_chat(
 
 if __name__ == "__main__":
     async def test():
-        async for chunk in stream_chat("claude-opus-4", "你好，我使用的模型版本是多少"):
+        async for chunk in stream_chat("claude-sonnet-4", "你好，我使用的模型版本是多少"):
             print(chunk, end="", flush=True)
     asyncio.run(test())
