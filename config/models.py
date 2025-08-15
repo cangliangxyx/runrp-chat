@@ -22,6 +22,12 @@ DEFAULT_MODELS = {
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_key": "link_api",
+    },
+    "grok-4": {
+        "label": "grok-4",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_key": "link_api",
     }
 }
 
