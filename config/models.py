@@ -41,7 +41,7 @@ def list_model_ids() -> list:
     return list(DEFAULT_MODELS.keys())
 
 if __name__ == "__main__":
-    data = model_registry('gpt-3.5')
+    data = model_registry('grok-4')
     print(data)
 
     print(list_model_ids())

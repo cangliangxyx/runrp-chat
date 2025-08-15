@@ -51,11 +51,7 @@ async def stream_chat(
 
     # 业务规则（仍保留在此处，便于按模型或业务定制）
     system_rules = (
-        "你是对话式爱情故事的叙事引擎，以第三人称视角来叙述故事"
-        "当用户或历史与世界状态冲突时，以世界状态为准并温和纠正"
-        "输出语言中文普通话。"
-        "男主:常亮"
-        "女性角色:张静（常亮的女友）"
+        "你是我的开发助手"
     )
 
     turns = history or []
@@ -147,7 +143,7 @@ async def stream_chat(
 if __name__ == "__main__":
     async def test():
         print("开始测试...")
-        async for chunk in stream_chat("grok-4", "慢慢走过去从后面抱住张静的腰"):
+        async for chunk in stream_chat("grok-4", "测试内容"):
             print(chunk, end="", flush=True)
         print("\n测试完成")
     asyncio.run(test())
