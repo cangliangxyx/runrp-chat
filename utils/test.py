@@ -22,6 +22,7 @@ def format_history(history_list):
             formatted.append(f"{idx}. {entry}")
     return "\n".join(formatted)
 
+
 async def test(model, prompt):
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -34,32 +35,28 @@ async def test(model, prompt):
 
     logger.info(f"[call] model: {model_label}, 请求目标: {base_url}")
 
-    # 把历史摘要拼接到系统规则里
-    # history_text = "\n".join(history) if history else "无历史记录。"
     history_text = format_history(history)
 
-    # system_rules = (
-    #     f"""你是我的开发助手,输出语言:简体中文普通话
-    #     对话结束后必须生成简短对话摘要格式如下：
-    #     ##{current_time}##
-    #     对话摘要
-    #     """
-    # )
-
-    system_rules = (
-        f"""你是都市爱情故事叙述者，以第一人称常亮的视角进行故事描写,输出语言:简体中文普通话，故事男主角:常亮，女主角:张静
-        对话结束后必须生成简短对话摘要格式如下：
+    system_rules = f"""你是都市爱情故事叙述者，故事以第一人称视角，主角为常亮。
+    输出语言: 简体中文普通话。
+    故事角色设定:
+      - 男主角: 常亮，年龄21
+      - 女性角色: 
+          1. 张静: 年龄19岁, 身高150厘米, 常亮女友，三围92-56-88/G杯, 外貌: 黑长直，白皙肌肤，圆润脸庞，笑容甜美纯真，身材娇小玲珑，曲线诱人。
+          2. 王可欣: 年龄20岁, 身高158厘米, 公司同事暗恋常亮，三围90-58-86/D杯, 外貌: 棕色及肩卷发，皮肤白皙，眼睛大而灵动，笑容甜美，身材娇小曲线明显。
+    故事要求:
+      - 所有叙述均以第一人称（常亮视角）进行。
+      - 对话结束后，必须生成简短对话摘要，格式如下：
         ##{current_time}##
-        <故事摘要>
-        <女性角色姓名>:<身体状态>,<内心独白>
-        """
-    )
+        <最近交互的女性角色名>:<故事摘要>
+    """
+
+    user_prompt = f"历史记录:{history_text}\n用户输入:{prompt}"
 
     messages = [
         {"role": "system", "content": system_rules},
-        {"role": "user", "content": f"历史记录:{history_text}" + f"用户输入:{prompt}"}
+        {"role": "user", "content": user_prompt}
     ]
-
     print(messages)
 
     data = {
@@ -73,7 +70,7 @@ async def test(model, prompt):
         "Authorization": f"Bearer {api_key}",
     }
 
-    full_text = ""  # 收集完整输出
+    full_text = ""
 
     async with httpx.AsyncClient(timeout=None) as client:
         async with client.stream("POST", base_url, headers=headers, json=data) as response:
@@ -93,7 +90,6 @@ async def test(model, prompt):
                         logger.warning(f"无法解析: {payload}")
     print()  # 流式输出完换行
 
-    # 提取摘要
     match = re.search(r"(##\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}##[\s\S]+)", full_text)
     if match:
         summary = match.group(1).strip()
