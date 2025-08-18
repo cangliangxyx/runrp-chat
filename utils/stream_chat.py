@@ -1,94 +1,70 @@
 # chat_service.py
-import asyncio, json, logging, httpx
+import asyncio, json, httpx, datetime
 from fastapi import HTTPException
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
 
+
 # 导入拆分后的通用功能
 from utils.chat_utils import (
-    logger,
-    SUMMARY_THRESHOLD,
-    MESSAGE_BUDGET_TOKENS,
-    summarize_history_if_needed,
-    slice_world_state,
-    should_summarize_by_tokens,
-    build_messages,
+    logger
 )
 
-# --------- 核心流式聊天（仅保留流输出与最小装配）---------
-async def stream_chat(
-    model: str,
-    prompt: str,
-    history: list[dict] | None = None,
-    memory: str | None = None,
-    world_state: dict | None = None
-):
+# 获取当前时间并格式化为时分秒
+current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+# --------- 核心流式聊天（仅保留流输出与最小装配）---------
+async def stream_chat(model: str,prompt: str):
     model_config = model_registry(model)
+    client_key = model_config.get("client_name")
+    client_config = CLIENT_CONFIGS.get(client_key)
+    base_url = client_config["base_url"]
+    api_key = client_config["api_key"]
+
     if not model_config:
         raise HTTPException(status_code=400, detail=f"模型 `{model}` 未注册")
     if not model_config.get("supports_streaming", False):
         raise HTTPException(status_code=400, detail=f"模型 `{model}` 不支持流式返回")
     model_label = model_config.get("label")
-    client_key = model_config.get("client_name")
-    client_config = CLIENT_CONFIGS.get(client_key)
-    if not client_config:
-        raise HTTPException(status_code=500, detail=f"未找到接口配置：{client_key}")
-
-    base_url = client_config["base_url"]
-    api_key = client_config["api_key"]
     temperature = model_config.get("default_temperature", 0.7)
+    stream = model_config.get('supports_streaming')
 
-    url = base_url
-    logger.info(f"[call] model: model_label={model_label}, 请求目标: URL={url}, 温度={temperature}")
+    logger.info(f"[call] model: model_label={model_label}, 请求目标: URL={base_url}, 温度={temperature}")
+
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
-        "Accept": "text/event-stream",
     }
 
     # 业务规则（仍保留在此处，便于按模型或业务定制）
     system_rules = (
-        "你是我的开发助手"
+        f"""
+        你是我的开发助手
+        输出语言:简体中文普通话
+        对话结束生成简短对话摘要格式如下：
+        ##{current_time}##
+        对话摘要
+        """
     )
-
-    turns = history or []
-
-    # 若总体预算超限，强制生成摘要（即使轮数不超）
-    world_text_probe = slice_world_state(world_state)  # 先做一次探测，供预算判断与后续复用
-    if should_summarize_by_tokens(system_rules, memory, world_text_probe, turns, prompt, MESSAGE_BUDGET_TOKENS):
-        memory = summarize_history_if_needed(turns, memory, threshold=0)  # 强制把早期全部压到摘要
-        logger.info("[budget] 因总预算超限，已强制摘要压缩早期历史")
-
-    # 计算最终摘要与世界切片
-    memory_text = summarize_history_if_needed(turns, memory, threshold=SUMMARY_THRESHOLD)
-
-    world_text = world_text_probe if world_text_probe else slice_world_state(world_state)
 
     # 组装 messages
-    messages = build_messages(
-        system_text=system_rules,
-        memory_text=memory_text,
-        world_text=world_text,
-        turns=turns,
-        user_text=prompt,
-        budget_tokens=MESSAGE_BUDGET_TOKENS,
-    )
+    messages = [
+        {"role": "system", "content": system_rules},
+        {"role": "user", "content": prompt}
+    ]
 
     data = {
         "model": model_label,
         "messages": messages,
-        "stream": True,
-        "temperature": min(max(temperature, 0.0), 1.5),
+        "stream": stream,
+        "temperature": temperature,
         "max_tokens": 800,
         "top_p": 1.0,
     }
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream("POST", url, json=data, headers=headers) as resp:
-                print(f"[chat_service] upstream status={resp.status_code}")
-
+            async with client.stream("POST", base_url, json=data, headers=headers) as resp:
                 if resp.status_code != 200:
                     error_text = await resp.aread()
                     error_msg = error_text.decode('utf-8', errors='ignore')
@@ -117,7 +93,6 @@ async def stream_chat(
     except Exception as e:
         logger.error(f"[http] 请求异常: {e}")
         yield f"[请求错误] {str(e)}"
-
 
 if __name__ == "__main__":
     async def test():

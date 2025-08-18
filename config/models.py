@@ -9,37 +9,37 @@ DEFAULT_MODELS = {
         "label": "deepseek-chat",
         "supports_streaming": True,
         "default_temperature": 0.6,
-        "client_key": "deepseek",
+        "client_name": "deepseek",
     },
     "gpt-5-mini": {
         "label": "gpt-5-mini-2025-08-07",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_key": "link_api",
+        "client_name": "link_api",
     },
     "gpt-5": {
         "label": "gpt-5",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_key": "link_api",
+        "client_name": "link_api",
     },
     "grok-4": {
         "label": "grok-4",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_key": "link_api",
+        "client_name": "link_api",
     },
     "gemini-2.5-pro": {
         "label": "gemini-2.5-pro-nothinking",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_key": "link_api",
+        "client_name": "link_api",
     },
     "claude-sonnet-4": {
         "label": "claude-sonnet-4-20250514",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_key": "claude_api",
+        "client_name": "claude_api",
     }
 }
 
