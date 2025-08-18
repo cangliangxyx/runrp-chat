@@ -48,7 +48,8 @@ async def test(model, prompt):
       - 所有叙述均以第一人称（常亮视角）进行。
       - 对话结束后，必须生成简短对话摘要，格式如下：
         ##{current_time}##
-        <最近交互的女性角色名>:<故事摘要>
+        <故事摘要>
+        <最近交互的女性角色简介>（最多输出3个）
     """
 
     user_prompt = f"历史记录:{history_text}\n用户输入:{prompt}"
