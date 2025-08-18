@@ -86,7 +86,7 @@ async def test(model, prompt):
                         if delta:
                             full_text += delta
                             # 只显示模型内容，不显示日志
-                            print(delta, end="", flush=True)
+                            yield delta
                     except json.JSONDecodeError:
                         logger.warning(f"无法解析: {payload}")
     print()  # 流式输出完换行
@@ -103,7 +103,9 @@ if __name__ == "__main__":
     async def main():
         model = "gpt-5-mini"
         while True:
-            prompt = input("\ninput: ")
-            await test(model, prompt)
+            prompt = input("\n请输入内容: ")
+            async for chunk in test(model, prompt):
+                print(chunk, end="")  # 流式输出，不换行
+            print()  # 每轮结束换行
 
     asyncio.run(main())

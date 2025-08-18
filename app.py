@@ -1,14 +1,12 @@
-# app.py
+# app_bak.py
+import logging, json, uvicorn
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import logging
-import json
-import uvicorn
 
 from config.models import list_model_ids
-from utils.chat_service import stream_chat
+from utils.test import test
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -29,48 +27,14 @@ async def index(request: Request):
 
 
 @app.post("/chat")
-async def chat(
-    model: str = Form(...),
-    prompt: str = Form(...),
-    history: str | None = Form(default=None),
-    memory: str | None = Form(default=None),
-    world_state: str | None = Form(default=None),
-    conversation_id: str | None = Form(default=None),
-):
-    logging.getLogger(__name__).info(f"[route] 收到 /chat | model={model} | prompt_preview={prompt[:50]}")
-    print(f"接收到聊天请求: model={model}, prompt={prompt[:50]}...")
-
-    parsed_history = None
-    parsed_memory = None
-    parsed_world_state = None
-
+async def chat(model: str = Form(...), prompt: str = Form(...)):
     try:
-        if history:
-            parsed_history = json.loads(history)
-        if memory:
-            parsed_memory = json.loads(memory) if memory.strip().startswith("{") or memory.strip().startswith("[") else memory
-        if world_state:
-            parsed_world_state = json.loads(world_state)
-    except Exception as e:
-        logging.getLogger(__name__).warning(f"[route] 解析上下文失败: {e}")
-        print(f"解析上下文失败: {e}")
-
-    try:
-        generator = stream_chat(
-            model=model,
-            prompt=prompt,
-            history=parsed_history,
-            memory=parsed_memory if isinstance(parsed_memory, str) else None,
-            world_state=parsed_world_state
-        )
-        print("创建了流式生成器")
         return StreamingResponse(
-            generator,
+            test(model=model, prompt=prompt),  # 传入异步生成器
             media_type="text/plain; charset=utf-8"
         )
     except Exception as e:
         logging.getLogger(__name__).error(f"[route] 创建流式响应时出错: {e}")
-        print(f"创建流式响应时出错: {e}")
         raise
 
 
