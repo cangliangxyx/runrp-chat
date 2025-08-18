@@ -39,7 +39,7 @@ DEFAULT_MODELS = {
         "label": "claude-sonnet-4-20250514",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_key": "cloudapi",
+        "client_key": "claude_api",
     }
 }
 
