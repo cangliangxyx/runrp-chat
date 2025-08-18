@@ -49,7 +49,7 @@ async def test(model, prompt):
       - 对话结束后，必须生成简短对话摘要，格式如下：
         ##{current_time}##
         <故事摘要>
-        <最近交互的女性角色简介>（最多输出3个）
+        <最近交互的女性角色内心独白>（最多输出3个）
     """
 
     user_prompt = f"历史记录:{history_text}\n用户输入:{prompt}"
