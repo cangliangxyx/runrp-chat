@@ -1,71 +1,68 @@
 import httpx
-import json, datetime, asyncio, re
+import json
+import datetime
+import asyncio
+import re
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
 from utils.chat_utils import logger
 
-history = []  # 历史记录摘要
+class ChatHistory:
+    """管理聊天历史摘要"""
+    TIMESTAMP_PATTERN = re.compile(r"(##\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}##)([\s\S]+)")
 
-def format_history(history_list):
-    """将历史摘要美化为编号 + 时间戳形式"""
-    if not history_list:
-        return "无历史记录。"
-    formatted = []
-    for idx, entry in enumerate(history_list, 1):
-        # 提取时间戳和内容
-        match = re.match(r"(##\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}##)([\s\S]+)", entry)
-        if match:
-            timestamp = match.group(1)
-            content = match.group(2).strip()
-            formatted.append(f"{idx}. {timestamp} {content}")
-        else:
-            formatted.append(f"{idx}. {entry}")
-    return "\n".join(formatted)
+    def __init__(self):
+        self._entries = []
 
+    def add(self, summary: str):
+        self._entries.append(summary)
 
-async def test(model, prompt):
+    def format(self) -> str:
+        if not self._entries:
+            return "无历史记录。"
+
+        formatted = []
+        for idx, entry in enumerate(self._entries, 1):
+            match = self.TIMESTAMP_PATTERN.match(entry)
+            if match:
+                timestamp, content = match.groups()
+                formatted.append(f"{idx}. {timestamp} {content.strip()}")
+            else:
+                formatted.append(f"{idx}. {entry}")
+        return "\n".join(formatted)
+
+history = ChatHistory()
+
+async def run_model(model: str, user_prompt: str, system_prompt):
+    """调用指定模型，流式返回生成内容"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     model_config = model_registry(model)
     client_key = model_config.get("client_name")
-    client_config = CLIENT_CONFIGS.get(client_key)
+    client_config = CLIENT_CONFIGS[client_key]
+
     base_url = client_config["base_url"]
     api_key = client_config["api_key"]
     model_label = model_config.get("label")
 
     logger.info(f"[call] model: {model_label}, 请求目标: {base_url}")
 
-    history_text = format_history(history)
-
-    system_rules = f"""你是都市爱情故事叙述者，故事以第一人称视角，主角为常亮。
-    输出语言: 简体中文普通话。
-    故事角色设定:
-      - 男主角: 常亮，年龄21
-      - 女性角色: 
-          1. 张静: 年龄19岁, 身高150厘米, 常亮女友，三围92-56-88/G杯, 外貌: 黑长直，白皙肌肤，圆润脸庞，笑容甜美纯真，身材娇小玲珑，曲线诱人。
-          2. 王可欣: 年龄20岁, 身高158厘米, 公司同事暗恋常亮，三围90-58-86/D杯, 外貌: 棕色及肩卷发，皮肤白皙，眼睛大而灵动，笑容甜美，身材娇小曲线明显。
-    故事要求:
-      - 所有叙述均以第一人称（常亮视角）进行。
-      - 对话结束后，必须生成简短对话摘要，格式如下：
+    system_rules = f"""
+        {system_prompt}
+        对话结束后，请生成对话摘要，格式如下：
         ##{current_time}##
-        <故事摘要>
-        <最近交互的女性角色内心独白>（最多输出3个）
-    """
-
-    user_prompt = f"历史记录:{history_text}\n用户输入:{prompt}"
-
-    messages = [
-        {"role": "system", "content": system_rules},
-        {"role": "user", "content": user_prompt}
-    ]
-    print(messages)
-
-    data = {
+        <最近对话摘要>
+        """
+    user_prompt = f"历史记录:{history.format()}\n用户输入:{user_prompt}"
+    payload = {
         "model": model_label,
         "stream": True,
-        "messages": messages
+        "messages": [
+            {"role": "system", "content": system_rules},
+            {"role": "user", "content": user_prompt},
+        ],
     }
-
+    print(payload)
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
@@ -74,38 +71,40 @@ async def test(model, prompt):
     full_text = ""
 
     async with httpx.AsyncClient(timeout=None) as client:
-        async with client.stream("POST", base_url, headers=headers, json=data) as response:
+        async with client.stream("POST", base_url, headers=headers, json=payload) as response:
             async for line in response.aiter_lines():
-                if line and line.startswith("data: "):
-                    payload = line[len("data: "):]
-                    if payload == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(payload)
-                        delta = chunk["choices"][0]["delta"].get("content")
-                        if delta:
-                            full_text += delta
-                            # 只显示模型内容，不显示日志
-                            yield delta
-                    except json.JSONDecodeError:
-                        logger.warning(f"无法解析: {payload}")
-    print()  # 流式输出完换行
+                if not line or not line.startswith("data: "):
+                    continue
 
-    match = re.search(r"(##\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}##[\s\S]+)", full_text)
+                payload = line[len("data: "):]
+                if payload == "[DONE]":
+                    break
+
+                try:
+                    chunk = json.loads(payload)
+                    delta = chunk["choices"][0]["delta"].get("content")
+                    if delta:
+                        full_text += delta
+                        yield delta  # 流式输出
+                except json.JSONDecodeError:
+                    logger.warning(f"无法解析: {payload}")
+
+    match = ChatHistory.TIMESTAMP_PATTERN.search(full_text)
     if match:
-        summary = match.group(1).strip()
-        history.append(summary)
+        history.add(match.group(0).strip())
 
-    for h in format_history(history).split("\n"):
-        print(h)
+from prompt.get_system_prompt import get_system_prompt
+
+async def main():
+    model = "gpt-5-mini"
+    system_prompt = get_system_prompt("prompt01")  # 默认使用 default
+    while True:
+        user_prompt = input("\n请输入内容: ")
+        async for chunk in run_model(model, user_prompt, system_prompt):
+            print(chunk, end="")
+        print("\n")
+        print("历史摘要：")
+        print(history.format())
 
 if __name__ == "__main__":
-    async def main():
-        model = "gpt-5-mini"
-        while True:
-            prompt = input("\n请输入内容: ")
-            async for chunk in test(model, prompt):
-                print(chunk, end="")  # 流式输出，不换行
-            print()  # 每轮结束换行
-
     asyncio.run(main())

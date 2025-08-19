@@ -4,8 +4,11 @@
   <meta charset="utf-8">
   <title>runrp-chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/static/style.css" />
-  <script src="/static/script.js" defer></script>
+    <link rel="stylesheet" href="/static/style.css?v=1.0.1" />
+    <script src="/static/script.js?v=1.0.1" defer></script>
+
+<!--  <link rel="stylesheet" href="/static/style.css" />-->
+<!--  <script src="/static/script.js" defer></script>-->
 </head>
 <body>
   <div class="app with-sidebar">
@@ -29,14 +32,21 @@
       <header class="topbar">
         <button class="menu-btn" id="btn-toggle" aria-label="切换侧栏">☰</button>
         <div class="brand">runrp-chat</div>
-        <div class="controls">
-          <label class="model-label" for="model">模型</label>
-          <select id="model" name="model" class="model-select">
-            {% for m in models %}
-              <option value="{{ m }}">{{ m }}</option>
-            {% endfor %}
-          </select>
-        </div>
+          <div class="controls">
+              <label class="model-label" for="model">模型</label>
+              <select id="model" name="model" class="model-select">
+                {% for m in models %}
+                  <option value="{{ m }}">{{ m }}</option>
+                {% endfor %}
+              </select>
+
+              <label class="model-label" for="system_rules">规则</label>
+              <select id="system_rules" name="system_rules" class="model-select">
+                <option value="default">default</option>
+                <option value="prompt01">prompt01</option>
+                <option value="prompt02">prompt02</option>
+              </select>
+          </div>
       </header>
 
       <!-- 主体：对话区 -->
