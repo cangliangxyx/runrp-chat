@@ -34,7 +34,7 @@ class ChatHistory:
 history = ChatHistory()
 
 async def run_model(model: str, user_prompt: str, system_prompt):
-    """调用指定模型，流式返回生成内容"""
+    """调用指定模型，流式返回生成内容，增加健壮性"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     model_config = model_registry(model)
@@ -76,22 +76,31 @@ async def run_model(model: str, user_prompt: str, system_prompt):
                 if not line or not line.startswith("data: "):
                     continue
 
-                payload = line[len("data: "):]
-                if payload == "[DONE]":
+                payload_line = line[len("data: "):]
+                if payload_line == "[DONE]":
                     break
 
                 try:
-                    chunk = json.loads(payload)
-                    delta = chunk["choices"][0]["delta"].get("content")
-                    if delta:
-                        full_text += delta
-                        yield delta  # 流式输出
-                except json.JSONDecodeError:
-                    logger.warning(f"无法解析: {payload}")
+                    chunk = json.loads(payload_line)
+                    choices = chunk.get("choices", [])
+                    if not choices:
+                        logger.warning(f"流返回空 choices: {chunk}")
+                        continue
 
+                    delta_content = choices[0].get("delta", {}).get("content")
+                    if delta_content:
+                        full_text += delta_content
+                        yield delta_content
+                except json.JSONDecodeError:
+                    logger.warning(f"无法解析: {payload_line}")
+                except Exception as e:
+                    logger.error(f"处理流 chunk 出错: {e}")
+
+    # 提取并保存摘要
     match = ChatHistory.TIMESTAMP_PATTERN.search(full_text)
     if match:
         history.add(match.group(0).strip())
+
 
 from prompt.get_system_prompt import get_system_prompt
 
