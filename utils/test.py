@@ -30,9 +30,7 @@ class ChatHistory:
             formatted.append(f"{idx}. {entry.strip()}")
         return "\n".join(formatted)
 
-
-history = ChatHistory(max_entries=5)  # 保留最近 5 条摘要
-
+history = ChatHistory(max_entries=10)
 
 async def run_model(model: str, user_prompt: str, system_prompt: str):
     """调用指定模型，流式返回生成内容，增加健壮性"""
@@ -51,9 +49,6 @@ async def run_model(model: str, user_prompt: str, system_prompt: str):
     # 系统提示中要求生成摘要
     system_rules = f"""
         {system_prompt}
-        对话结束后，请生成对话摘要，格式如下：
-        ##{current_time}##
-        <最近对话摘要>
     """
 
     # 仅使用最近几条摘要，避免过长
@@ -106,19 +101,18 @@ async def run_model(model: str, user_prompt: str, system_prompt: str):
     if match:
         summary_text = match.group(0).strip()
         history.add(summary_text)
+        print()
         logger.info(f"保存摘要: {summary_text}")
 
 from prompt.get_system_prompt import get_system_prompt
 
 async def main():
-    model = "gpt-5-mini"
+    model = "gemini-2.5-pro"
     system_prompt = get_system_prompt("prompt02")  # 默认使用 default
     while True:
         user_prompt = input("\n请输入内容: ")
         async for chunk in run_model(model, user_prompt, system_prompt):
             print(chunk, end="", flush=True)
-        print("\n历史摘要：")
-        print(history.format())
 
 if __name__ == "__main__":
     asyncio.run(main())
