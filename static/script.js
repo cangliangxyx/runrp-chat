@@ -12,6 +12,17 @@
   const btnClearAll = document.getElementById("btn-clear-all");
   const convList = document.getElementById("conv-list");
 
+  // 遮罩层，用于小屏幕点击关闭侧栏
+  const overlay = document.createElement("div");
+  overlay.id = "sidebar-overlay";
+  overlay.style.cssText = `
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.3); z-index: 15; display:none;
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener("click", () => closeSidebar());
+
   // 本地存储键
   const LS_KEY = "runrp_chat_conversations";
   const LS_ACTIVE = "runrp_chat_active";
@@ -19,7 +30,6 @@
   let conversations = loadConversations();
   let activeId = loadActiveId();
 
-  // 工具函数
   const uid = () => Math.random().toString(36).slice(2, 10);
   const save = () => {
     localStorage.setItem(LS_KEY, JSON.stringify(conversations));
@@ -79,7 +89,9 @@
       wrap.append(title, meta, actions);
       item.appendChild(wrap);
 
-      item.addEventListener("click", () => { activeId = conv.id; save(); renderConvList(); renderMessages(); closeSidebar(); });
+      item.addEventListener("click", () => {
+        activeId = conv.id; save(); renderConvList(); renderMessages(); closeSidebar();
+      });
 
       convList.appendChild(item);
     });
@@ -150,16 +162,23 @@
     return { conv, bubble: nodes[nodes.length - 1] };
   }
 
-  function scrollToBottom() { requestAnimationFrame(() => messagesEl.scrollTop = messagesEl.scrollHeight); }
+  function scrollToBottom() {
+    requestAnimationFrame(() => {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+  }
 
   // 侧栏控制
-  const openSidebar = () => sidebar.classList.add("open");
-  const closeSidebar = () => sidebar.classList.remove("open");
-  btnToggle?.addEventListener("click", () => sidebar.classList.toggle("open"));
+  const openSidebar = () => { sidebar.classList.add("open"); overlay.style.display = "block"; }
+  const closeSidebar = () => { sidebar.classList.remove("open"); overlay.style.display = "none"; }
+  btnToggle?.addEventListener("click", () => sidebar.classList.toggle("open") ? openSidebar() : closeSidebar());
   btnNew?.addEventListener("click", () => { newConversation(); openSidebar(); });
   btnClearAll?.addEventListener("click", () => {
     if (confirm("确认清空所有历史会话吗？")) { conversations = []; activeId = ""; save(); renderConvList(); renderMessages(); newConversation(); }
   });
+
+  // 点击消息区空白处关闭侧栏
+  messagesEl.addEventListener("click", e => { if (!e.target.closest(".bubble")) closeSidebar(); });
 
   // 回车发送
   promptEl.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
@@ -212,4 +231,9 @@
   // 初始化
   if (!activeId || !getActiveConv()) newConversation();
   else { renderConvList(); renderMessages(); }
+
+  // 监听窗口大小变化，关闭侧栏适配小屏
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 900) closeSidebar();
+  });
 })();
