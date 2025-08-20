@@ -30,10 +30,11 @@ DEFAULT_MODELS = {
         "client_name": "link_api",
     },
     "gemini-2.5-pro": {
-        "label": "gemini-2.5-pro-nothinking",
+        # "label": "gemini-2.5-pro-nothinking",
+        "label": "gemini-2.5-pro-thinking",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_name": "link_api",
+        "client_name": "claude_api",
     },
     "claude-sonnet-4": {
         "label": "claude-sonnet-4-20250514",

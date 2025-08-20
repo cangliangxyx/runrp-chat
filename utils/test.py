@@ -54,9 +54,7 @@ async def run_model(model: str, user_prompt: str, system_prompt: str):
     # 仅使用最近几条摘要，避免过长
     last_summaries = "\n".join(history._entries[-10:])
     user_prompt_full = f"历史记录:\n{last_summaries}\n用户输入:{user_prompt}"
-
-    logger.info(f"摘要: {user_prompt_full}")
-
+    # logger.info(f"摘要: {user_prompt_full}")
     payload = {
         "model": model_label,
         "stream": True,
@@ -108,7 +106,7 @@ async def run_model(model: str, user_prompt: str, system_prompt: str):
 from prompt.get_system_prompt import get_system_prompt
 
 async def main():
-    model = "claude-sonnet-4"
+    model = "gemini-2.5-pro"
     system_prompt = get_system_prompt("prompt01")  # 默认使用 default
     while True:
         user_prompt = input("\n请输入内容: ")
