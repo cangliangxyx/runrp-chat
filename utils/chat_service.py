@@ -18,7 +18,7 @@ from utils.chat_utils import (
 # --------- 核心流式聊天（仅保留流输出与最小装配）---------
 async def run_model(
     model: str,
-    prompt: str,
+    user_prompt: str,
     system_prompt: str,
     history: list[dict] | None = None,
     memory: str | None = None,
@@ -57,7 +57,7 @@ async def run_model(
 
     # 若总体预算超限，强制生成摘要（即使轮数不超）
     world_text_probe = slice_world_state(world_state)  # 先做一次探测，供预算判断与后续复用
-    if should_summarize_by_tokens(system_rules, memory, world_text_probe, turns, prompt, MESSAGE_BUDGET_TOKENS):
+    if should_summarize_by_tokens(system_rules, memory, world_text_probe, turns, user_prompt, MESSAGE_BUDGET_TOKENS):
         memory = summarize_history_if_needed(turns, memory, threshold=0)  # 强制把早期全部压到摘要
         logger.info("[budget] 因总预算超限，已强制摘要压缩早期历史")
 
@@ -72,7 +72,7 @@ async def run_model(
         memory_text=memory_text,
         world_text=world_text,
         turns=turns,
-        user_text=prompt,
+        user_text=user_prompt,
         budget_tokens=MESSAGE_BUDGET_TOKENS,
     )
 
