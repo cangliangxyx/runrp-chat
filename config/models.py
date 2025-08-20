@@ -5,6 +5,12 @@ logger = logging.getLogger(__name__)
 
 # 预置模型
 DEFAULT_MODELS = {
+    "claude-api": {
+        "label": "claude-sonnet-4-20250514",
+        "supports_streaming": True,
+        "default_temperature": 0.6,
+        "client_name": "claude_api",
+    },
     "deepseek-chat": {
         "label": "deepseek-chat",
         "supports_streaming": True,
@@ -30,11 +36,11 @@ DEFAULT_MODELS = {
         "client_name": "link_api",
     },
     "gemini-2.5-pro": {
-        # "label": "gemini-2.5-pro-nothinking",
-        "label": "gemini-2.5-pro-thinking",
+        "label": "gemini-2.5-pro-nothinking",
+        # "label": "gemini-2.5-pro-thinking",
         "supports_streaming": True,
         "default_temperature": 0.4,
-        "client_name": "claude_api",
+        "client_name": "link_api",
     },
     "claude-sonnet-4": {
         "label": "claude-sonnet-4-20250514",

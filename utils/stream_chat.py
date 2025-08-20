@@ -1,101 +1,131 @@
-# chat_service.py
-import asyncio, json, httpx, datetime
-from fastapi import HTTPException
+import httpx
+import json
+import datetime
+import asyncio
+import re
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
+from utils.chat_utils import logger
 
+class ChatHistory:
+    """管理聊天历史摘要"""
+    # 改成更宽松的正则，适应模型生成格式
+    TIMESTAMP_PATTERN = re.compile(r"##[\d\- :]+##([\s\S]+)")
 
-# 导入拆分后的通用功能
-from utils.chat_utils import (
-    logger
-)
+    def __init__(self, max_entries: int = 10):
+        self._entries = []
+        self.max_entries = max_entries
 
-# 获取当前时间并格式化为时分秒
-current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def add(self, summary: str):
+        self._entries.append(summary)
+        # 限制历史长度
+        if len(self._entries) > self.max_entries:
+            self._entries = self._entries[-self.max_entries:]
 
-# --------- 核心流式聊天（仅保留流输出与最小装配）---------
-async def stream_chat(model: str,prompt: str):
+    def format(self) -> str:
+        if not self._entries:
+            return "无历史记录。"
+        formatted = []
+        for idx, entry in enumerate(self._entries, 1):
+            formatted.append(f"{idx}. {entry.strip()}")
+        return "\n".join(formatted)
+
+history = ChatHistory(max_entries=10)
+
+async def run_model(model: str, user_prompt: str, system_prompt: str):
+    """调用指定模型，流式返回生成内容，增加健壮性"""
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     model_config = model_registry(model)
     client_key = model_config.get("client_name")
-    client_config = CLIENT_CONFIGS.get(client_key)
+    client_config = CLIENT_CONFIGS[client_key]
+
     base_url = client_config["base_url"]
     api_key = client_config["api_key"]
-
-    if not model_config:
-        raise HTTPException(status_code=400, detail=f"模型 `{model}` 未注册")
-    if not model_config.get("supports_streaming", False):
-        raise HTTPException(status_code=400, detail=f"模型 `{model}` 不支持流式返回")
     model_label = model_config.get("label")
-    temperature = model_config.get("default_temperature", 0.7)
-    stream = model_config.get('supports_streaming')
 
-    logger.info(f"[call] model: model_label={model_label}, 请求目标: URL={base_url}, 温度={temperature}")
+    logger.info(f"[call] model: {model_label}, 请求目标: {base_url}")
+
+    # 系统提示中要求生成摘要
+    system_rules = f"""
+        {system_prompt}
+    """
+
+    # 仅使用最近几条摘要，避免过长
+    last_summaries = "\n".join(history._entries[-10:])
+    user_prompt_full = f"历史记录:\n{last_summaries}\n用户输入:{user_prompt}"
+    # logger.info(f"摘要: {user_prompt_full}")
+    payload = {
+        "model": model_label,
+        "stream": True,
+        "messages": [
+            {"role": "system", "content": system_rules},
+            {"role": "user", "content": user_prompt_full},
+        ],
+    }
 
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
     }
 
-    # 业务规则（仍保留在此处，便于按模型或业务定制）
-    system_rules = (
-        f"""
-        你是我的开发助手
-        输出语言:简体中文普通话
-        对话结束生成简短对话摘要格式如下：
-        ##{current_time}##
-        对话摘要
-        """
-    )
+    full_text = ""
 
-    # 组装 messages
-    messages = [
-        {"role": "system", "content": system_rules},
-        {"role": "user", "content": prompt}
-    ]
+    async with httpx.AsyncClient(timeout=None) as client:
+        async with client.stream("POST", base_url, headers=headers, json=payload) as response:
+            async for line in response.aiter_lines():
+                if not line or not line.startswith("data: "):
+                    continue
 
-    data = {
-        "model": model_label,
-        "messages": messages,
-        "stream": stream,
-        "temperature": temperature,
-        "max_tokens": 800,
-        "top_p": 1.0,
-    }
+                payload_line = line[len("data: "):]
+                if payload_line == "[DONE]":
+                    break
 
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream("POST", base_url, json=data, headers=headers) as resp:
-                if resp.status_code != 200:
-                    error_text = await resp.aread()
-                    error_msg = error_text.decode('utf-8', errors='ignore')
-                    logger.error(f"[http] 错误 {resp.status_code}: {error_msg}")
-                    yield f"[API 错误 {resp.status_code}] {error_msg}"
-                    return
+                try:
+                    chunk = json.loads(payload_line)
+                    choices = chunk.get("choices", [])
+                    if not choices or "delta" not in choices[0]:
+                        continue  # 忽略空 chunk
 
-                # 解析 SSE 流
-                async for line in resp.aiter_lines():
-                    if not line:
-                        continue
-                    if line.startswith("data: "):
-                        chunk = line[6:]
-                        if chunk.strip() == "[DONE]":
-                            break
-                        try:
-                            parsed = json.loads(chunk)
-                            if "choices" in parsed and parsed["choices"]:
-                                delta = parsed["choices"][0].get("delta", {})
-                                if "content" in delta:
-                                    yield delta["content"]
-                        except json.JSONDecodeError:
-                            # 心跳或非 JSON 片段，忽略
-                            continue
+                    delta_content = choices[0].get("delta", {}).get("content")
+                    if delta_content:
+                        full_text += delta_content
+                        yield delta_content
+                except json.JSONDecodeError:
+                    logger.warning(f"无法解析: {payload_line}")
+                except Exception as e:
+                    logger.error(f"处理流 chunk 出错: {e}")
 
-    except Exception as e:
-        logger.error(f"[http] 请求异常: {e}")
-        yield f"[请求错误] {str(e)}"
+    # 提取并保存摘要
+    match = ChatHistory.TIMESTAMP_PATTERN.search(full_text)
+    if match:
+        summary_text = match.group(0).strip()
+        history.add(summary_text)
+        print()
+
+from prompt.get_system_prompt import get_system_prompt
+from config.models import list_model_ids
+
+async def main():
+    models = list_model_ids()
+    print("可用模型：")
+    for idx, m in enumerate(models, 1):
+        print(f"{idx}. {m}")
+    while True:
+        try:
+            choice = int(input("请选择模型编号: "))
+            if 1 <= choice <= len(models):
+                model = models[choice - 1]
+                break
+            else:
+                print("无效选择，请重新输入。")
+        except ValueError:
+            print("请输入数字。")
+    system_prompt = get_system_prompt("prompt01")
+    while True:
+        user_prompt = input("\n请输入内容: ")
+        async for chunk in run_model(model, user_prompt, system_prompt):
+            print(chunk, end="", flush=True)
 
 if __name__ == "__main__":
-    async def test():
-        async for chunk in stream_chat("claude-sonnet-4", "你好，我使用的模型版本是多少"):
-            print(chunk, end="", flush=True)
-    asyncio.run(test())
+    asyncio.run(main())

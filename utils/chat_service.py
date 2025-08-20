@@ -16,9 +16,10 @@ from utils.chat_utils import (
 )
 
 # --------- 核心流式聊天（仅保留流输出与最小装配）---------
-async def stream_chat(
+async def run_model(
     model: str,
     prompt: str,
+    system_prompt: str,
     history: list[dict] | None = None,
     memory: str | None = None,
     world_state: dict | None = None
@@ -48,9 +49,9 @@ async def stream_chat(
     }
 
     # 业务规则（仍保留在此处，便于按模型或业务定制）
-    system_rules = (
-        "你是我的开发助手"
-    )
+    system_rules = f"""
+        {system_prompt}
+    """
 
     turns = history or []
 
@@ -119,8 +120,29 @@ async def stream_chat(
         yield f"[请求错误] {str(e)}"
 
 
-if __name__ == "__main__":
-    async def test():
-        async for chunk in stream_chat("claude-sonnet-4", "你好，我使用的模型版本是多少"):
+from prompt.get_system_prompt import get_system_prompt
+from config.models import list_model_ids
+
+async def main():
+    models = list_model_ids()
+    print("可用模型：")
+    for idx, m in enumerate(models, 1):
+        print(f"{idx}. {m}")
+    while True:
+        try:
+            choice = int(input("请选择模型编号: "))
+            if 1 <= choice <= len(models):
+                model = models[choice - 1]
+                break
+            else:
+                print("无效选择，请重新输入。")
+        except ValueError:
+            print("请输入数字。")
+    system_prompt = get_system_prompt("prompt01")
+    while True:
+        user_prompt = input("\n请输入内容: ")
+        async for chunk in run_model(model, user_prompt, system_prompt):
             print(chunk, end="", flush=True)
-    asyncio.run(test())
+
+if __name__ == "__main__":
+    asyncio.run(main())
