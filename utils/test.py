@@ -104,10 +104,24 @@ async def run_model(model: str, user_prompt: str, system_prompt: str):
         print()
 
 from prompt.get_system_prompt import get_system_prompt
+from config.models import list_model_ids
 
 async def main():
-    model = "gemini-2.5-pro"
-    system_prompt = get_system_prompt("prompt01")  # 默认使用 default
+    models = list_model_ids()
+    print("可用模型：")
+    for idx, m in enumerate(models, 1):
+        print(f"{idx}. {m}")
+    while True:
+        try:
+            choice = int(input("请选择模型编号: "))
+            if 1 <= choice <= len(models):
+                model = models[choice - 1]
+                break
+            else:
+                print("无效选择，请重新输入。")
+        except ValueError:
+            print("请输入数字。")
+    system_prompt = get_system_prompt("prompt01")
     while True:
         user_prompt = input("\n请输入内容: ")
         async for chunk in run_model(model, user_prompt, system_prompt):
