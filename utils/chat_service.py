@@ -1,5 +1,5 @@
 # chat_service.py
-import asyncio, json, logging, httpx
+import asyncio, json, httpx
 from fastapi import HTTPException
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
