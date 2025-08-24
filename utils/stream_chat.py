@@ -121,7 +121,7 @@ async def main():
                 print("无效选择，请重新输入。")
         except ValueError:
             print("请输入数字。")
-    system_prompt = get_system_prompt("prompt02")
+    system_prompt = get_system_prompt("prompt01")
     while True:
         user_prompt = input("\n请输入内容: ")
         async for chunk in run_model(model, user_prompt, system_prompt):
