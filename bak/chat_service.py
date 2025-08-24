@@ -5,7 +5,7 @@ from config.config import CLIENT_CONFIGS
 from config.models import model_registry
 
 # 导入拆分后的通用功能
-from utils.chat_utils import (
+from bak.chat_utils import (
     logger,
     SUMMARY_THRESHOLD,
     MESSAGE_BUDGET_TOKENS,

@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from config.models import list_model_ids
-from utils.chat_service import run_model
+from utils.stream_chat import run_model
 from prompt.get_system_prompt import get_system_prompt
 
 app = FastAPI()

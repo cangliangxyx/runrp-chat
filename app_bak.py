@@ -8,7 +8,7 @@ import json
 import uvicorn
 
 from config.models import list_model_ids
-from utils.chat_service import stream_chat
+from bak.chat_service import stream_chat
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")

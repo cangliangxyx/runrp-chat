@@ -5,7 +5,7 @@ import asyncio
 import re
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
-from utils.chat_utils import logger
+from bak.chat_utils import logger
 
 class ChatHistory:
     """管理聊天历史摘要"""
@@ -121,7 +121,7 @@ async def main():
                 print("无效选择，请重新输入。")
         except ValueError:
             print("请输入数字。")
-    system_prompt = get_system_prompt("prompt01")
+    system_prompt = get_system_prompt("prompt02")
     while True:
         user_prompt = input("\n请输入内容: ")
         async for chunk in run_model(model, user_prompt, system_prompt):

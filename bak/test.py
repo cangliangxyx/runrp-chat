@@ -5,7 +5,7 @@ import asyncio
 import re
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
-from utils.chat_utils import logger
+from bak.chat_utils import logger
 
 class ChatHistory:
     """管理聊天历史摘要"""
