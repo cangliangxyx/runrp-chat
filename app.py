@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from config.models import list_model_ids
-from utils.stream_chat import run_model
+from utils.stream_chat import execute_model
 from prompt.get_system_prompt import get_system_prompt
 
 app = FastAPI()
@@ -39,7 +39,7 @@ async def chat(
     try:
         system_prompt = get_system_prompt(system_rule)
         return StreamingResponse(
-            run_model(model=model, user_prompt=prompt, system_prompt=system_prompt),
+            execute_model(model_name=model, user_input=prompt, system_instructions=system_prompt),
             media_type="text/plain; charset=utf-8",
         )
     except Exception as e:

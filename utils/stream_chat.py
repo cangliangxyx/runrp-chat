@@ -1,75 +1,51 @@
-import httpx
+# utils/stream_chat.py
+
 import json
-import datetime
+from datetime import datetime
 import asyncio
-import re
+import httpx
+from typing import AsyncGenerator
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
-from bak.chat_utils import logger
+from utils.chat_history import ChatHistory
+import logging
 
-class ChatHistory:
-    """管理聊天历史摘要"""
-    # 改成更宽松的正则，适应模型生成格式
-    TIMESTAMP_PATTERN = re.compile(r"##[\d\- :]+##([\s\S]+)")
+logger = logging.getLogger(__name__)
 
-    def __init__(self, max_entries: int = 10):
-        self._entries = []
-        self.max_entries = max_entries
+chat_history = ChatHistory(max_entries=10)
 
-    def add(self, summary: str):
-        self._entries.append(summary)
-        # 限制历史长度
-        if len(self._entries) > self.max_entries:
-            self._entries = self._entries[-self.max_entries:]
+async def execute_model(model_name: str, user_input: str, system_instructions: str) -> AsyncGenerator[str, None]:
+    """调用指定模型并流式返回生成内容"""
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    model_details = model_registry(model_name)
+    client_key = model_details.get("client_name")
+    client_settings = CLIENT_CONFIGS[client_key]
 
-    def format(self) -> str:
-        if not self._entries:
-            return "无历史记录。"
-        formatted = []
-        for idx, entry in enumerate(self._entries, 1):
-            formatted.append(f"{idx}. {entry.strip()}")
-        return "\n".join(formatted)
+    base_url = client_settings["base_url"]
+    api_key = client_settings["api_key"]
+    model_label = model_details.get("label")
 
-history = ChatHistory(max_entries=10)
+    logger.info(f"[call] Model: {model_label}, 请求目标: {base_url}")
 
-async def run_model(model: str, user_prompt: str, system_prompt: str):
-    """调用指定模型，流式返回生成内容，增加健壮性"""
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    system_prompt = f"{system_instructions}\n"
+    recent_summaries = chat_history.format_history()
+    full_user_prompt = f"历史记录:\n{recent_summaries}\n用户输入:{user_input}"
 
-    model_config = model_registry(model)
-    client_key = model_config.get("client_name")
-    client_config = CLIENT_CONFIGS[client_key]
-
-    base_url = client_config["base_url"]
-    api_key = client_config["api_key"]
-    model_label = model_config.get("label")
-
-    logger.info(f"[call] model: {model_label}, 请求目标: {base_url}")
-
-    # 系统提示中要求生成摘要
-    system_rules = f"""
-        {system_prompt}
-    """
-
-    # 仅使用最近几条摘要，避免过长
-    last_summaries = "\n".join(history._entries[-10:])
-    user_prompt_full = f"历史记录:\n{last_summaries}\n用户输入:{user_prompt}"
-    # logger.info(f"摘要: {user_prompt_full}")
     payload = {
         "model": model_label,
         "stream": True,
         "messages": [
-            {"role": "system", "content": system_rules},
-            {"role": "user", "content": user_prompt_full},
-        ],
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": full_user_prompt}
+        ]
     }
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {api_key}"
     }
 
-    full_text = ""
+    full_response_text = ""
 
     async with httpx.AsyncClient(timeout=None) as client:
         async with client.stream("POST", base_url, headers=headers, json=payload) as response:
@@ -77,55 +53,57 @@ async def run_model(model: str, user_prompt: str, system_prompt: str):
                 if not line or not line.startswith("data: "):
                     continue
 
-                payload_line = line[len("data: "):]
-                if payload_line == "[DONE]":
-                    break
+                data_str = line[len("data: "):].strip()
+                if data_str in ("[DONE]", ""):
+                    continue  # 跳过流结束标识或空行
 
                 try:
-                    chunk = json.loads(payload_line)
-                    choices = chunk.get("choices", [])
-                    if not choices or "delta" not in choices[0]:
-                        continue  # 忽略空 chunk
-
-                    delta_content = choices[0].get("delta", {}).get("content")
-                    if delta_content:
-                        full_text += delta_content
-                        yield delta_content
+                    chunk = json.loads(data_str)
                 except json.JSONDecodeError:
-                    logger.warning(f"无法解析: {payload_line}")
-                except Exception as e:
-                    logger.error(f"处理流 chunk 出错: {e}")
+                    logger.warning(f"跳过无效 JSON: {data_str}")
+                    continue
 
-    # 提取并保存摘要
-    match = ChatHistory.TIMESTAMP_PATTERN.search(full_text)
+                choices = chunk.get("choices", [])
+                if choices and "delta" in choices[0]:
+                    delta_content = choices[0]["delta"].get("content")
+                    if delta_content:
+                        full_response_text += delta_content
+                        yield delta_content
+
+    # 流结束后尝试匹配时间戳并保存历史
+    match = ChatHistory.TIMESTAMP_PATTERN.search(full_response_text)
     if match:
-        summary_text = match.group(0).strip()
-        history.add(summary_text)
-        print()
+        chat_history.add_entry(match.group(1).strip())  # group(1) 是内容
+
+
 
 from prompt.get_system_prompt import get_system_prompt
 from config.models import list_model_ids
 
-async def main():
-    models = list_model_ids()
+
+async def main_loop():
+    available_models = list_model_ids()
     print("可用模型：")
-    for idx, m in enumerate(models, 1):
-        print(f"{idx}. {m}")
+    [print(f"{i + 1}. {model}") for i, model in enumerate(available_models)]
+
     while True:
         try:
-            choice = int(input("请选择模型编号: "))
-            if 1 <= choice <= len(models):
-                model = models[choice - 1]
+            selected_index = int(input("请选择模型编号: ")) - 1
+            if 0 <= selected_index < len(available_models):
+                model_name = available_models[selected_index]
                 break
             else:
                 print("无效选择，请重新输入。")
         except ValueError:
             print("请输入数字。")
-    system_prompt = get_system_prompt("prompt01")
+
+    system_instructions = get_system_prompt("prompt02")
+
     while True:
-        user_prompt = input("\n请输入内容: ")
-        async for chunk in run_model(model, user_prompt, system_prompt):
-            print(chunk, end="", flush=True)
+        user_input = input("\n请输入内容: ")
+        async for text_chunk in execute_model(model_name, user_input, system_instructions):
+            print(text_chunk, end="", flush=True)
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main_loop())
