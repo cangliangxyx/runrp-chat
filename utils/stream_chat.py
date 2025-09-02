@@ -24,6 +24,8 @@ chat_history = ChatHistory(max_entries=10)  # 保存最近 10 条对话
 current_personas: list[str] = get_default_personas()  # 默认玩家主角 + 刘焕琴
 
 MAX_HISTORY_ENTRIES = 10  # 系统 prompt 中最多包含最近几条历史记录
+SAVE_STORY_SUMMARY_ONLY = True  # 新增：True=仅保存故事摘要，False=保存全部内容
+
 
 # -----------------------------
 # 核心功能：调用模型并流式返回
@@ -61,7 +63,23 @@ async def execute_model(model_name: str, user_input: str, system_instructions: s
     if current_personas:
         for name in current_personas:
             try:
-                persona_info += f"{name}: {load_persona(name)}\n"
+                persona_data = load_persona(name)
+                # 将字典格式化为简洁的文本格式
+                if isinstance(persona_data, dict):
+                    # 提取关键信息
+                    key_info = []
+                    if "性别" in persona_data:
+                        key_info.append(f"性别:{persona_data['性别']}")
+                    if "年龄" in persona_data:
+                        key_info.append(f"年龄:{persona_data['年龄']}")
+                    if "职业" in persona_data:
+                        key_info.append(f"职业:{persona_data['职业']}")
+                    if "外貌" in persona_data:
+                        key_info.append(f"外貌:{persona_data['外貌']}")
+
+                    persona_info += f"{name}: {', '.join(key_info)}\n"
+                else:
+                    persona_info += f"{name}: {str(persona_data)}\n"
             except KeyError:
                 logger.warning(f"未找到 NPC {name}，忽略")
     else:
@@ -71,14 +89,22 @@ async def execute_model(model_name: str, user_input: str, system_instructions: s
     # -----------------------------
     # 最近历史对话（放 messages 中）
     # -----------------------------
-    history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
-    for e in history_entries:
-        messages.append({"role": "user", "content": e["user"]})
-        messages.append({"role": "assistant", "content": e["assistant"]})
+    if SAVE_STORY_SUMMARY_ONLY:
+        # 如果保存的是摘要，直接使用历史记录
+        history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
+        for e in history_entries:
+            messages.append({"role": "user", "content": e["user"]})
+            messages.append({"role": "assistant", "content": e["assistant"]})
+    else:
+        # 如果保存的是完整内容，可以选择提取摘要或使用完整内容
+        history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
+        for e in history_entries:
+            messages.append({"role": "user", "content": e["user"]})
+            messages.append({"role": "assistant", "content": e["assistant"]})
 
     # 当前用户输入
     messages.append({"role": "user", "content": user_input})
-
+    print(messages)
     payload = {
         "model": model_label,
         "stream": True,
@@ -121,14 +147,25 @@ async def execute_model(model_name: str, user_input: str, system_instructions: s
 
     except httpx.RequestError as e:
         logger.error(f"请求模型接口异常: {e}")
-        print("请求模型失败，请检查网络或接口设置。")
+        logger.error("请求模型失败，请检查网络或接口设置。")
 
     # -----------------------------
     # 保存历史
     # -----------------------------
     if full_response_text.strip():
-        chat_history.add_entry(user_input, full_response_text)
-        logger.info("[对话已保存] 用户输入 + 模型回复")
+        if SAVE_STORY_SUMMARY_ONLY:
+            # 仅保存故事摘要部分
+            summary = chat_history._extract_summary_from_assistant(full_response_text)
+            if summary:
+                chat_history.add_entry(user_input, summary)
+                logger.info("[对话已保存] 用户输入 + 故事摘要")
+            else:
+                logger.info("[跳过保存] 未找到故事摘要")
+        else:
+            # 保存完整对话内容
+            chat_history.add_entry(user_input, full_response_text)
+            logger.info("[对话已保存] 用户输入 + 模型回复")
+
 
 
 # -----------------------------
@@ -138,7 +175,8 @@ async def select_model() -> str:
     """让用户选择模型"""
     available_models = list_model_ids()
     print("\n可用模型：")
-    [print(f"{i + 1}. {m}") for i, m in enumerate(available_models)]
+    for i, m in enumerate(available_models):
+        print(f"{i + 1}. {m}")
 
     while True:
         try:
@@ -149,8 +187,10 @@ async def select_model() -> str:
                 return model_name
             else:
                 print("无效选择，请重新输入。")
+                logger.warning(f"[选择错误] 用户选择了无效的模型编号: {idx + 1}")
         except ValueError:
             print("请输入数字。")
+            logger.warning("[选择错误] 用户输入了非数字内容")
 
 
 # -----------------------------
@@ -161,25 +201,25 @@ async def main_loop():
     global current_personas
     model_name = await select_model()
     system_instructions = get_system_prompt("prompt_test")
-
-    print(f"\n默认出场人物: {current_personas}")
+    logger.info(f"[默认出场人物] {current_personas}")
+    logger.info(f"[历史保存模式] {'仅故事摘要' if SAVE_STORY_SUMMARY_ONLY else '完整内容'}")
 
     while True:
         user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
+        logger.info(f"[用户输入] {user_input[:50]}{'...' if len(user_input) > 50 else ''}")
 
         # -----------------------------
         # 系统命令处理
         # -----------------------------
         if user_input == "{clear}":
             chat_history.clear_history()
-            print("历史记录已清空")
             logger.info("[操作] 历史记录已清空")
             continue
 
         if user_input == "{history}":
-            print("当前历史记录：")
-            print(chat_history.format_history(MAX_HISTORY_ENTRIES))
             logger.info("[操作] 查看历史记录")
+            history_text = chat_history.format_history(MAX_HISTORY_ENTRIES)
+            logger.info(f"[历史记录]\n{history_text}")
             continue
 
         if user_input.startswith("{switch}"):
@@ -190,17 +230,21 @@ async def main_loop():
         if user_input.startswith("{personas}"):
             # 支持 personas 1,3 快速选择
             current_personas = await select_personas()
+            logger.info(f"[人物更新] 当前出场人物: {current_personas}")
             continue
 
         # -----------------------------
         # 调用模型并流式打印回复
         # -----------------------------
+        logger.info("[开始生成] 调用模型生成回复...")
         async for text_chunk in execute_model(model_name, user_input, system_instructions):
             print(text_chunk, end="", flush=True)
+        logger.info("\n[生成完成] 模型回复已输出完成")
 
 
 # -----------------------------
 # 脚本入口
 # -----------------------------
 if __name__ == "__main__":
+    logger.info("[启动] Stream Chat 应用启动")
     asyncio.run(main_loop())
