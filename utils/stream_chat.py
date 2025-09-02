@@ -25,14 +25,14 @@ current_personas: list[str] = get_default_personas()  # 默认玩家主角 + 刘
 
 MAX_HISTORY_ENTRIES = 10  # 系统 prompt 中最多包含最近几条历史记录
 
-
 # -----------------------------
 # 核心功能：调用模型并流式返回
 # -----------------------------
 async def execute_model(model_name: str, user_input: str, system_instructions: str) -> AsyncGenerator[str, None]:
     """
     调用指定模型并流式返回生成内容
-    - 支持上下文拼接
+    - 系统规则放 system prompt
+    - 历史对话放 messages 的 user/assistant
     - 流式输出
     - 完成后保存聊天历史
     """
@@ -47,12 +47,17 @@ async def execute_model(model_name: str, user_input: str, system_instructions: s
     logger.info(f"[调用模型] {model_label} @ {base_url}")
 
     # -----------------------------
-    # 系统 prompt 拼接
+    # 系统 prompt 拼接（仅规则/世界观）
     # -----------------------------
-    # 玩家角色固定显示
-    persona_info = "玩家角色: 常亮\n"
+    system_prompt = system_instructions
 
-    # 加入当前出场 NPC
+    # -----------------------------
+    # 消息列表
+    # -----------------------------
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # 出场人物信息作为 system message
+    persona_info = "玩家角色: 常亮\n"
     if current_personas:
         for name in current_personas:
             try:
@@ -61,21 +66,23 @@ async def execute_model(model_name: str, user_input: str, system_instructions: s
                 logger.warning(f"未找到 NPC {name}，忽略")
     else:
         logger.info("[提示] 当前未选择 NPC 出场，仅包含玩家主角 常亮")
+    messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
 
-    # 限制历史长度，防止 prompt 太大
-    recent_history = chat_history.format_history(MAX_HISTORY_ENTRIES)
-    system_prompt = f"{system_instructions}\n出场人物:\n{persona_info}\n历史记录:\n{recent_history}\n"
+    # -----------------------------
+    # 最近历史对话（放 messages 中）
+    # -----------------------------
+    history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
+    for e in history_entries:
+        messages.append({"role": "user", "content": e["user"]})
+        messages.append({"role": "assistant", "content": e["assistant"]})
 
-    # 用户输入拼接
-    full_user_prompt = f"用户输入: {user_input}"
+    # 当前用户输入
+    messages.append({"role": "user", "content": user_input})
 
     payload = {
         "model": model_label,
         "stream": True,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": full_user_prompt}
-        ]
+        "messages": messages
     }
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
 
