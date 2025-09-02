@@ -78,7 +78,8 @@ async def chat(
             execute_model(
                 model_name=model,
                 user_input=prompt,
-                system_instructions=system_prompt
+                system_instructions=system_prompt,
+                personas = current_personas
             ),
             media_type="text/plain; charset=utf-8"
         )
