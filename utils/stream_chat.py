@@ -1,3 +1,5 @@
+# utils/stream_chat.py
+
 import json
 import asyncio
 import httpx
@@ -7,20 +9,32 @@ from config.config import CLIENT_CONFIGS
 from config.models import model_registry, list_model_ids
 from utils.chat_history import ChatHistory
 from prompt.get_system_prompt import get_system_prompt
+from utils.persona_loader import select_personas, load_persona, get_default_personas
 
+# -----------------------------
 # 日志配置
+# -----------------------------
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-# 全局聊天历史（保存最近 10 条对话）
-chat_history = ChatHistory(max_entries=10)
+# -----------------------------
+# 全局变量
+# -----------------------------
+chat_history = ChatHistory(max_entries=10)  # 保存最近 10 条对话
+current_personas: list[str] = get_default_personas()  # 默认玩家主角 + 刘焕琴
+
+MAX_HISTORY_ENTRIES = 10  # 系统 prompt 中最多包含最近几条历史记录
 
 
+# -----------------------------
+# 核心功能：调用模型并流式返回
+# -----------------------------
 async def execute_model(model_name: str, user_input: str, system_instructions: str) -> AsyncGenerator[str, None]:
     """
     调用指定模型并流式返回生成内容
     - 支持上下文拼接
-    - 每次调用结束后存储完整对话
+    - 流式输出
+    - 完成后保存聊天历史
     """
     model_details = model_registry(model_name)
     client_key = model_details["client_name"]
@@ -32,10 +46,28 @@ async def execute_model(model_name: str, user_input: str, system_instructions: s
 
     logger.info(f"[调用模型] {model_label} @ {base_url}")
 
-    # 拼接 prompt
-    system_prompt = f"{system_instructions}\n"
-    recent_history = chat_history.format_history()
-    full_user_prompt = f"历史记录:\n{recent_history}\n用户输入:{user_input}"
+    # -----------------------------
+    # 系统 prompt 拼接
+    # -----------------------------
+    # 玩家角色固定显示
+    persona_info = "玩家角色: 常亮\n"
+
+    # 加入当前出场 NPC
+    if current_personas:
+        for name in current_personas:
+            try:
+                persona_info += f"{name}: {load_persona(name)}\n"
+            except KeyError:
+                logger.warning(f"未找到 NPC {name}，忽略")
+    else:
+        logger.info("[提示] 当前未选择 NPC 出场，仅包含玩家主角 常亮")
+
+    # 限制历史长度，防止 prompt 太大
+    recent_history = chat_history.format_history(MAX_HISTORY_ENTRIES)
+    system_prompt = f"{system_instructions}\n出场人物:\n{persona_info}\n历史记录:\n{recent_history}\n"
+
+    # 用户输入拼接
+    full_user_prompt = f"用户输入: {user_input}"
 
     payload = {
         "model": model_label,
@@ -49,36 +81,52 @@ async def execute_model(model_name: str, user_input: str, system_instructions: s
 
     full_response_text = ""
 
+    # -----------------------------
     # 异步请求模型接口（流式输出）
-    async with httpx.AsyncClient(timeout=None) as client:
-        async with client.stream("POST", base_url, headers=headers, json=payload) as response:
-            async for line in response.aiter_lines():
-                if not line or not line.startswith("data: "):
-                    continue
+    # -----------------------------
+    try:
+        async with httpx.AsyncClient(timeout=None) as client:
+            async with client.stream("POST", base_url, headers=headers, json=payload) as response:
+                if response.status_code != 200:
+                    logger.error(f"模型接口返回非200状态码: {response.status_code}")
+                    return
 
-                data_str = line[len("data: "):].strip()
-                if data_str in ("[DONE]", ""):
-                    continue
+                async for line in response.aiter_lines():
+                    if not line or not line.startswith("data: "):
+                        continue
 
-                try:
-                    chunk = json.loads(data_str)
-                except json.JSONDecodeError:
-                    logger.warning(f"无效 JSON: {data_str}")
-                    continue
+                    data_str = line[len("data: "):].strip()
+                    if data_str in ("[DONE]", ""):
+                        continue
 
-                choices = chunk.get("choices", [])
-                if choices and "delta" in choices[0]:
-                    delta_content = choices[0]["delta"].get("content")
-                    if delta_content:
-                        full_response_text += delta_content
-                        yield delta_content
+                    try:
+                        chunk = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        logger.warning(f"无效 JSON: {data_str}")
+                        continue
 
-    # 调用完成后保存历史
+                    choices = chunk.get("choices", [])
+                    if choices and "delta" in choices[0]:
+                        delta_content = choices[0]["delta"].get("content")
+                        if delta_content:
+                            full_response_text += delta_content
+                            yield delta_content
+
+    except httpx.RequestError as e:
+        logger.error(f"请求模型接口异常: {e}")
+        print("请求模型失败，请检查网络或接口设置。")
+
+    # -----------------------------
+    # 保存历史
+    # -----------------------------
     if full_response_text.strip():
         chat_history.add_entry(user_input, full_response_text)
         logger.info("[对话已保存] 用户输入 + 模型回复")
 
 
+# -----------------------------
+# 模型选择
+# -----------------------------
 async def select_model() -> str:
     """让用户选择模型"""
     available_models = list_model_ids()
@@ -98,15 +146,23 @@ async def select_model() -> str:
             print("请输入数字。")
 
 
+# -----------------------------
+# 主循环
+# -----------------------------
 async def main_loop():
     """主交互循环"""
+    global current_personas
     model_name = await select_model()
-    system_instructions = get_system_prompt("prompt02")
+    system_instructions = get_system_prompt("prompt_test")
+
+    print(f"\n默认出场人物: {current_personas}")
 
     while True:
-        user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}): ").strip()
+        user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
 
+        # -----------------------------
         # 系统命令处理
+        # -----------------------------
         if user_input == "{clear}":
             chat_history.clear_history()
             print("历史记录已清空")
@@ -115,18 +171,29 @@ async def main_loop():
 
         if user_input == "{history}":
             print("当前历史记录：")
-            print(chat_history.format_history())
+            print(chat_history.format_history(MAX_HISTORY_ENTRIES))
             logger.info("[操作] 查看历史记录")
             continue
 
-        if user_input == "{switch}":
+        if user_input.startswith("{switch}"):
+            # 支持 switch 2 直接切换
             model_name = await select_model()
             continue
 
+        if user_input.startswith("{personas}"):
+            # 支持 personas 1,3 快速选择
+            current_personas = await select_personas()
+            continue
+
+        # -----------------------------
         # 调用模型并流式打印回复
+        # -----------------------------
         async for text_chunk in execute_model(model_name, user_input, system_instructions):
             print(text_chunk, end="", flush=True)
 
 
+# -----------------------------
+# 脚本入口
+# -----------------------------
 if __name__ == "__main__":
     asyncio.run(main_loop())

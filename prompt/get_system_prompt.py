@@ -4,6 +4,7 @@ PROMPT_FILES = {
     "default": "system_prompt_def.md",
     "prompt01": "system_prompt_01.md",
     "prompt02": "system_prompt_02.md",
+    "prompt_test": "system_prompt_test.md",
 }
 
 PROMPT_CACHE = {}
