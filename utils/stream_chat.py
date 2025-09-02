@@ -22,17 +22,48 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 chat_history = ChatHistory(max_entries=10)  # 保存最近 10 条对话
 
 MAX_HISTORY_ENTRIES = 10  # 系统 prompt 中最多包含最近几条历史记录
-SAVE_STORY_SUMMARY_ONLY = True  # 新增：True=仅保存故事摘要，False=保存全部内容
+SAVE_STORY_SUMMARY_ONLY = True  # True=仅保存故事摘要，False=保存全部内容
+
+
+# -----------------------------
+# 角色加载简化函数
+# -----------------------------
+def append_personas_to_messages(messages: list[dict], personas: list[str]) -> None:
+    """
+    将指定角色信息加载到 messages 中（作为 system message），只返回数据，不打印。
+
+    Args:
+        messages: 消息列表，函数会直接 append
+        personas: 角色名称列表
+    """
+    persona_info = "玩家角色: 常亮\n"
+
+    for name in personas:
+        try:
+            persona_data = load_persona(name)
+            if isinstance(persona_data, dict):
+                key_info = []
+                for k in ["性别", "年龄", "职业", "外貌"]:
+                    if k in persona_data:
+                        key_info.append(f"{k}:{persona_data[k]}")
+                persona_info += f"{name}: {', '.join(key_info)}\n"
+            else:
+                persona_info += f"{name}: {str(persona_data)}\n"
+        except KeyError:
+            # 未找到的 NPC 直接跳过
+            continue
+
+    messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
 
 
 # -----------------------------
 # 核心功能：调用模型并流式返回
 # -----------------------------
 async def execute_model(
-    model_name: str,
-    user_input: str,
-    system_instructions: str,
-    personas: list[str]
+        model_name: str,
+        user_input: str,
+        system_instructions: str,
+        personas: list[str]
 ) -> AsyncGenerator[str, None]:
     """
     调用指定模型并流式返回生成内容
@@ -61,31 +92,10 @@ async def execute_model(
     # -----------------------------
     messages = [{"role": "system", "content": system_prompt}]
 
-    # 出场人物信息作为 system message
-    persona_info = "玩家角色: 常亮\n"
-    if personas:
-        for name in personas:
-            try:
-                persona_data = load_persona(name)
-                # 将字典格式化为简洁的文本格式
-                if isinstance(persona_data, dict):
-                    key_info = []
-                    if "性别" in persona_data:
-                        key_info.append(f"性别:{persona_data['性别']}")
-                    if "年龄" in persona_data:
-                        key_info.append(f"年龄:{persona_data['年龄']}")
-                    if "职业" in persona_data:
-                        key_info.append(f"职业:{persona_data['职业']}")
-                    if "外貌" in persona_data:
-                        key_info.append(f"外貌:{persona_data['外貌']}")
-                    persona_info += f"{name}: {', '.join(key_info)}\n"
-                else:
-                    persona_info += f"{name}: {str(persona_data)}\n"
-            except KeyError:
-                logger.warning(f"未找到 NPC {name}，忽略")
-    else:
-        logger.info("[提示] 当前未选择 NPC 出场，仅包含玩家主角 常亮")
-    messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
+    # -----------------------------
+    # 出场人物信息加载（简化版）
+    # -----------------------------
+    append_personas_to_messages(messages, personas)
 
     # -----------------------------
     # 最近历史对话（放 messages 中）
@@ -97,7 +107,7 @@ async def execute_model(
 
     # 当前用户输入
     messages.append({"role": "user", "content": user_input})
-    # print(messages)
+
     payload = {
         "model": model_label,
         "stream": True,

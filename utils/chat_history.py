@@ -74,42 +74,6 @@ class ChatHistory:
         )
         return formatted
 
-    def extract_story_summaries_from_time(self, start_time: str) -> str:
-        """
-        从指定时间开始提取故事摘要
-
-        Args:
-            start_time: 起始时间，格式如 "2024-03-15 18:30"
-        Returns:
-            str: 从指定时间开始的所有故事摘要
-        """
-        if not self.entries:
-            return "无历史记录。"
-
-        # 查找起始时间对应的记录索引
-        start_idx = None
-        target_time = start_time.strip()
-
-        for idx, entry in enumerate(self.entries):
-            entry_time = entry.get("timestamp", "")
-            # 比较时间（精确到分钟）
-            if entry_time[:16] >= target_time[:16]:
-                start_idx = idx
-                break
-
-        if start_idx is None:
-            return "未找到指定时间或之后的记录。"
-
-        # 提取从起始时间到最后的所有记录中的故事摘要
-        summaries = []
-        for entry in self.entries[start_idx:]:
-            assistant_text = entry.get("assistant", "")
-            summary = self._extract_summary_from_assistant(assistant_text)
-            if summary:
-                summaries.append(summary)
-
-        return "\n\n".join(summaries) if summaries else "未找到故事摘要。"
-
     def _extract_summary_from_assistant(self, assistant_text: str) -> Optional[str]:
         """
         从助手回复文本中提取故事摘要部分
@@ -121,7 +85,8 @@ class ChatHistory:
             str: 提取的故事摘要，如果没有找到则返回 None
         """
         # 匹配 ##时间戳## 到文本结尾的部分（包含时间戳本身）
-        pattern = r'##\d{4}-\d{2}-\d{2} \d{2}:\d{2}##.*'
+        # pattern = r'##\d{4}-\d{2}-\d{2} \d{2}:\d{2}##.*'
+        pattern = r'##\s*\d{4}-\d{2}-\d{2} \d{2}:\d{2}\s*##.*'
         match = re.search(pattern, assistant_text, re.DOTALL)
         if match:
             return match.group(0).strip()
