@@ -11,8 +11,8 @@ DEFAULT_MODELS = {
         "default_temperature": 0.6,
         "client_name": "claude_api",
     },
-    "deepseek-chat": {
-        "label": "deepseek-chat",
+    "deepseek-reasoner": {
+        "label": "deepseek-reasoner",
         "supports_streaming": True,
         "default_temperature": 0.6,
         "client_name": "deepseek",
