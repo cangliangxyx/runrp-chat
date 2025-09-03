@@ -86,7 +86,8 @@ class ChatHistory:
         """
         # 匹配 ##时间戳## 到文本结尾的部分（包含时间戳本身）
         # pattern = r'##\d{4}-\d{2}-\d{2} \d{2}:\d{2}##.*'
-        pattern = r'##\s*\d{4}-\d{2}-\d{2} \d{2}:\d{2}\s*##.*'
+        # pattern = r'##\s*\d{4}-\d{2}-\d{2} \d{2}:\d{2}\s*##.*'
+        pattern = r'##\s*摘要-\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*##.*'
         match = re.search(pattern, assistant_text, re.DOTALL)
         if match:
             return match.group(0).strip()

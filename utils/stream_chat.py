@@ -106,7 +106,7 @@ async def execute_model(
         messages.append({"role": "assistant", "content": e["assistant"]})
 
     # 当前用户输入
-    messages.append({"role": "user", "content": user_input})
+    messages.append({"role": "user", "content": f"注意输出格式，正文+摘要,{user_input}"})
 
     payload = {
         "model": model_label,
