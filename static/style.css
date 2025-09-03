@@ -177,7 +177,7 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
-  min-width: 180px;
+  min-width: 100px;
 }
 
 /* 主体对话区 */
