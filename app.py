@@ -9,6 +9,7 @@ from config.models import list_model_ids
 from utils.stream_chat import execute_model
 from prompt.get_system_prompt import get_system_prompt
 from utils.persona_loader import list_personas, get_default_personas
+from utils.stream_chat import chat_history
 
 # -----------------------------
 # 日志配置
@@ -115,6 +116,15 @@ async def update_personas(selected: str = Form(...)):
     current_personas = [name for name in names if name in available]
     logger.info(f"[人物更新] 当前出场人物: {current_personas}")
     return {"status": "ok", "current_personas": current_personas}
+
+# -----------------------------
+# 清除历史事件
+# -----------------------------
+@app.post("/clear_history")
+async def clear_history():
+    chat_history.clear_history()
+    logger.info("[操作] 历史记录已清空 (来自 Web)")
+    return {"status": "ok"}
 
 # -----------------------------
 # 启动服务

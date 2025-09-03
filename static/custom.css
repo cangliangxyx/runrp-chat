@@ -1,0 +1,24 @@
+/* 出场人物 & 控制栏样式 */
+.personas-selection, .current-personas {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.personas-selection label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.current-personas span {
+  color: #007bff;
+}
+
+/* 顶部控制栏按钮样式 */
+.clear-history-btn {
+  padding: 0 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  height: 28px;
+  line-height: 28px;
+  box-sizing: border-box;
+}
