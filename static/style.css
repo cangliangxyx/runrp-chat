@@ -200,7 +200,7 @@ html, body {
 
 .msg { display: flex; width: 100%; }
 .msg .bubble {
-  max-width: min(72ch, 85%);
+  max-width: min(92ch, 95%);
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--border);
