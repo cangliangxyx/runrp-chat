@@ -93,13 +93,6 @@ async def execute_model_for_app(
     append_personas_to_messages(messages, personas)
 
     # ③ 历史对话（不包含当前占位）
-    # history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:-1]
-    # for e in history_entries:
-    #     messages.extend([
-    #         {"role": "user", "content": e["user"]},
-    #         {"role": "assistant", "content": e["assistant"]}
-    #     ])
-    # 改为只传递系统参考信息
     history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:-1]
     if history_entries:
         summary_text = "\n".join([f"{e['assistant']}" for e in history_entries if e['assistant']])
