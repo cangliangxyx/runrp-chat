@@ -5,11 +5,8 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-
-
-from utils.stream_chat import execute_model_for_app  # 改成新方法
 from config.models import list_model_ids
-# from utils.stream_chat import execute_model
+from utils.stream_chat import execute_model
 from prompt.get_system_prompt import get_system_prompt
 from utils.persona_loader import list_personas, get_default_personas
 from utils.stream_chat import chat_history
@@ -57,46 +54,18 @@ async def index(request: Request):
 # -----------------------------
 # 聊天接口
 # -----------------------------
-# @app.post("/chat")
-# async def chat(
-#     model: str = Form(...),
-#     prompt: str = Form(...),
-#     system_rule: str = Form("default")
-# ):
-#     """
-#     聊天接口：流式返回模型生成内容
-#     - model: 模型 ID
-#     - prompt: 用户输入
-#     - system_rule: 系统规则
-#     """
-#     if model not in list_model_ids():
-#         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
-#
-#     try:
-#         system_prompt = get_system_prompt(system_rule)
-#     except KeyError:
-#         raise HTTPException(status_code=400, detail=f"system_rule '{system_rule}' 不存在")
-#
-#     try:
-#         return StreamingResponse(
-#             execute_model(
-#                 model_name=model,
-#                 user_input=prompt,
-#                 system_instructions=system_prompt,
-#                 personas = current_personas
-#             ),
-#             media_type="text/plain; charset=utf-8"
-#         )
-#     except Exception as e:
-#         logger.error(f"[chat] 流式响应出错: {e}", exc_info=True)
-#         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
-
 @app.post("/chat")
 async def chat(
     model: str = Form(...),
     prompt: str = Form(...),
     system_rule: str = Form("default")
 ):
+    """
+    聊天接口：流式返回模型生成内容
+    - model: 模型 ID
+    - prompt: 用户输入
+    - system_rule: 系统规则
+    """
     if model not in list_model_ids():
         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
 
@@ -107,18 +76,17 @@ async def chat(
 
     try:
         return StreamingResponse(
-            execute_model_for_app(
+            execute_model(
                 model_name=model,
                 user_input=prompt,
                 system_instructions=system_prompt,
-                personas=current_personas
+                personas = current_personas
             ),
             media_type="text/plain; charset=utf-8"
         )
     except Exception as e:
         logger.error(f"[chat] 流式响应出错: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
-
 
 # -----------------------------
 # 获取人物列表
