@@ -10,7 +10,7 @@ import httpx
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
 from utils.chat_history import ChatHistory
-from utils.stream_chat import append_personas_to_messages
+from utils.persona_loader import load_persona
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -21,6 +21,35 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 chat_history = ChatHistory(max_entries=50) # 只保留最近 50 条对话。
 MAX_HISTORY_ENTRIES = 10 # 最近 10 条对话传给模型
 SAVE_STORY_SUMMARY_ONLY = True  # 只保存摘要，避免文件太大
+
+
+# -----------------------------
+# 角色加载简化函数
+# -----------------------------
+def append_personas_to_messages(messages: list[dict], personas: list[str]) -> None:
+    """
+    将指定角色信息加载到 messages 中（作为 system message），完整返回所有字段。
+
+    Args:
+        messages: 消息列表，函数会直接 append
+        personas: 角色名称列表
+    """
+    persona_info = "玩家角色: 常亮\n"
+
+    for name in personas:
+        try:
+            persona_data = load_persona(name)
+            if isinstance(persona_data, dict):
+                # 将所有字段拼接为 key: value
+                info_lines = [f"{k}:{v}" for k, v in persona_data.items()]
+                persona_info += f"{name}: {', '.join(info_lines)}\n"
+            else:
+                persona_info += f"{name}: {str(persona_data)}\n"
+        except KeyError:
+            # 未找到的 NPC 直接跳过
+            continue
+
+    messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
 
 
 async def execute_model_for_app(
@@ -64,17 +93,23 @@ async def execute_model_for_app(
     append_personas_to_messages(messages, personas)
 
     # ③ 历史对话（不包含当前占位）
+    # history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:-1]
+    # for e in history_entries:
+    #     messages.extend([
+    #         {"role": "user", "content": e["user"]},
+    #         {"role": "assistant", "content": e["assistant"]}
+    #     ])
+    # 改为只传递系统参考信息
     history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:-1]
-    for e in history_entries:
-        messages.extend([
-            {"role": "user", "content": e["user"]},
-            {"role": "assistant", "content": e["assistant"]}
-        ])
+    if history_entries:
+        summary_text = "\n".join([f"{e['assistant']}" for e in history_entries if e['assistant']])
+        if summary_text:
+            messages.append({"role": "system", "content": f"历史摘要（仅参考，不要重复）：\n{summary_text}"})
 
     # ④ 当前用户输入
     current_user_message = {
         "role": "user",
-        "content": f"注意输出格式正文+摘要，每次输出不少于2000字。用户输入内容：{user_input}"
+        "content": f"继续故事，不要重复历史内容，注意输出格式正文+摘要，每次输出不少于2000字。用户输入内容：{user_input}"
     }
     messages.append(current_user_message)
 

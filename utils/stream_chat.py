@@ -31,7 +31,7 @@ SAVE_STORY_SUMMARY_ONLY = True  # True=仅保存故事摘要，False=保存全�
 # -----------------------------
 def append_personas_to_messages(messages: list[dict], personas: list[str]) -> None:
     """
-    将指定角色信息加载到 messages 中（作为 system message），只返回数据，不打印。
+    将指定角色信息加载到 messages 中（作为 system message），完整返回所有字段。
 
     Args:
         messages: 消息列表，函数会直接 append
@@ -43,11 +43,9 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
         try:
             persona_data = load_persona(name)
             if isinstance(persona_data, dict):
-                key_info = []
-                for k in ["性别", "年龄", "职业", "外貌"]:
-                    if k in persona_data:
-                        key_info.append(f"{k}:{persona_data[k]}")
-                persona_info += f"{name}: {', '.join(key_info)}\n"
+                # 将所有字段拼接为 key: value
+                info_lines = [f"{k}:{v}" for k, v in persona_data.items()]
+                persona_info += f"{name}: {', '.join(info_lines)}\n"
             else:
                 persona_info += f"{name}: {str(persona_data)}\n"
         except KeyError:
@@ -55,6 +53,7 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
             continue
 
     messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
+
 
 # -----------------------------
 # 核心功能：调用模型并流式返回
