@@ -26,7 +26,6 @@ chat_history = ChatHistory(max_entries=10)  # 保存最近 10 条对话
 MAX_HISTORY_ENTRIES = 10  # 系统 prompt 中最多包含最近几条历史记录
 SAVE_STORY_SUMMARY_ONLY = True  # True=仅保存故事摘要，False=保存全部内容
 
-
 # -----------------------------
 # 角色加载简化函数
 # -----------------------------
@@ -56,7 +55,6 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
             continue
 
     messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
-
 
 # -----------------------------
 # 核心功能：调用模型并流式返回
@@ -169,7 +167,6 @@ async def execute_model(
             chat_history.add_entry(user_input, full_response_text)
             logger.info("[对话已保存] 用户输入 + 模型回复")
 
-
 # -----------------------------
 # 模型选择
 # -----------------------------
@@ -193,7 +190,6 @@ async def select_model() -> str:
         except ValueError:
             print("请输入数字。")
             logger.warning("[选择错误] 用户输入了非数字内容")
-
 
 # -----------------------------
 # 主循环（仅命令行用）
@@ -234,115 +230,6 @@ async def main_loop():
         async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
             print(text_chunk, end="", flush=True)
         logger.info("\n[生成完成] 模型回复已输出完成")
-
-
-async def execute_model_for_app(
-        model_name: str,
-        user_input: str,
-        system_instructions: str,
-        personas: list[str]
-) -> AsyncGenerator[str, None]:
-    """
-    专供 app.py 使用的模型执行器：
-    1. 先写入用户输入占位
-    2. 流式输出时逐块 yield
-    3. 结束后补充 assistant 内容
-    4. 出错则回滚占位
-    """
-    # 先写入用户输入占位
-    chat_history.entries.append({
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "user": user_input.strip(),
-        "assistant": ""
-    })
-    if len(chat_history.entries) > chat_history.max_entries:
-        chat_history.entries = chat_history.entries[-chat_history.max_entries:]
-
-    # -----------------------------
-    # 拼接消息列表（和 execute_model 相同）
-    # -----------------------------
-    model_details = model_registry(model_name)
-    client_key = model_details["client_name"]
-    client_settings = CLIENT_CONFIGS[client_key]
-
-    base_url = client_settings["base_url"]
-    api_key = client_settings["api_key"]
-    model_label = model_details["label"]
-
-    messages = [{"role": "system", "content": system_instructions}]
-    append_personas_to_messages(messages, personas)
-
-    history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
-    for e in history_entries[:-1]:  # 不要重复追加刚刚插入的最后一条（它会作为当前输入）
-        messages.append({"role": "user", "content": e["user"]})
-        messages.append({"role": "assistant", "content": e["assistant"]})
-
-    messages.append({"role": "user", "content": f"注意输出格式，正文+摘要,输出不少于2000字,{user_input}"})
-
-    payload = {
-        "model": model_label,
-        "stream": True,
-        "messages": messages
-    }
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-
-    full_response_text = ""
-
-    try:
-        async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream("POST", base_url, headers=headers, json=payload) as response:
-                if response.status_code != 200:
-                    logger.error(f"模型接口返回非200状态码: {response.status_code}")
-                    # 回滚占位
-                    chat_history.entries.pop()
-                    return
-
-                async for line in response.aiter_lines():
-                    if not line or not line.startswith("data: "):
-                        continue
-
-                    data_str = line[len("data: "):].strip()
-                    if data_str in ("[DONE]", ""):
-                        continue
-
-                    try:
-                        chunk = json.loads(data_str)
-                    except json.JSONDecodeError:
-                        logger.warning(f"无效 JSON: {data_str}")
-                        continue
-
-                    choices = chunk.get("choices", [])
-                    if choices and "delta" in choices[0]:
-                        delta_content = choices[0]["delta"].get("content")
-                        if delta_content:
-                            full_response_text += delta_content
-                            yield delta_content
-
-    except httpx.RequestError as e:
-        logger.error(f"请求模型接口异常: {e}")
-        chat_history.entries.pop()
-        return
-
-    # -----------------------------
-    # 覆盖 assistant 字段并保存
-    # -----------------------------
-    if full_response_text.strip():
-        if SAVE_STORY_SUMMARY_ONLY:
-            summary = chat_history._extract_summary_from_assistant(full_response_text)
-            if summary:
-                chat_history.entries[-1]["assistant"] = summary
-                chat_history.save_history()
-                logger.info("[对话已保存] 用户输入 + 故事摘要")
-            else:
-                logger.info("[跳过保存] 未找到故事摘要")
-        else:
-            chat_history.entries[-1]["assistant"] = full_response_text
-            chat_history.save_history()
-            logger.info("[对话已保存] 用户输入 + 模型回复")
-    else:
-        # 没生成结果就回滚
-        chat_history.entries.pop()
-
 
 if __name__ == "__main__":
     logger.info("[启动] Stream Chat 应用启动")
