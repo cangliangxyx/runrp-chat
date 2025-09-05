@@ -7,7 +7,7 @@ CLIENT_CONFIGS = {
     },
     "link_api": {
         "base_url": "https://api.linkapi.org/v1/chat/completions",
-        "api_key": "sk-0nYpiWOSzvn4plFp7iintyi4KzVn9NzcUpwuGmkcJ1xW2LKX"
+        "api_key": "sk-rz5YqQesySPRCTM89gUmpXaLeRh9xrukCsJGfX3ODamaebAM"
     },
     "claude_api": {
         "base_url": "https://chat.cloudapi.vip/v1/chat/completions",
