@@ -9,6 +9,7 @@ from config.models import list_model_ids
 from prompt.get_system_prompt import get_system_prompt
 from utils.persona_loader import list_personas, get_default_personas
 from utils.stream_chat_app import execute_model_for_app, chat_history
+from prompt.get_system_prompt import PROMPT_FILES
 
 # -----------------------------
 # 日志配置
@@ -111,6 +112,14 @@ async def clear_history():
     chat_history.clear_history()
     logger.info("[操作] 历史记录已清空 (来自 Web)")
     return JSONResponse({"status": "ok"})
+
+# -----------------------------
+# 获取system prompt
+# -----------------------------
+@app.get("/system_rules")
+async def get_system_rules():
+    """返回所有可选的 system_rules"""
+    return JSONResponse({"rules": list(PROMPT_FILES.keys())})
 
 # -----------------------------
 # 启动服务

@@ -55,12 +55,9 @@
           </select>
 
           <label class="model-label" for="system_rules">规则</label>
-          <select id="system_rules" name="system_rules" class="model-select">
-            <option value="default">default</option>
-            <option value="prompt01">prompt01</option>
-            <option value="prompt02">prompt02</option>
-            <option value="prompt_test">prompt_test</option>
-          </select>
+            <select id="system_rules" name="system_rules" class="model-select">
+              <!-- 动态注入 option -->
+            </select>
             <!-- 新增：清空历史按钮 -->
           <button id="btn-clear-history" class="clear-history-btn" title="清空当前历史">清</button>
         </div>

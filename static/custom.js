@@ -48,3 +48,25 @@ document.addEventListener("DOMContentLoaded", () => {
   setupClearHistory();
   setInterval(refreshCurrentPersonas, 50000000);
 });
+
+// 动态加载 system_rules
+document.addEventListener("DOMContentLoaded", () => {
+  fetch("/system_rules")
+    .then((res) => res.json())
+    .then((data) => {
+      const select = document.getElementById("system_rules");
+      select.innerHTML = ""; // 清空原本的静态选项
+      data.rules.forEach((rule) => {
+        const opt = document.createElement("option");
+        opt.value = rule;
+        opt.textContent = rule;
+        select.appendChild(opt);
+      });
+      // 默认选中 developer（如果存在）
+      if (data.rules.includes("developer")) {
+        select.value = "developer";
+      }
+    })
+    .catch((err) => console.error("加载 system_rules 失败:", err));
+});
+
