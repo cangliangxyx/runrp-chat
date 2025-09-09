@@ -102,7 +102,7 @@ async def execute_model_for_app(
     # ④ 当前用户输入
     current_user_message = {
         "role": "user",
-        "content": f"注意输出格式正文+摘要，用户输入内容：{user_input}"
+        "content": f"继续故事，注意输出格式正文+摘要，用户输入内容：{user_input}。"
     }
     messages.append(current_user_message)
 
