@@ -43,8 +43,6 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
                 # 将所有字段拼接为 key: value
                 info_lines = [f"{k}:{v}" for k, v in persona_data.items()]
                 persona_info += f"{name}: {', '.join(info_lines)}\n"
-            else:
-                persona_info += f"{name}: {str(persona_data)}\n"
         except KeyError:
             # 未找到的 NPC 直接跳过
             continue
@@ -102,7 +100,7 @@ async def execute_model_for_app(
     # ④ 当前用户输入
     current_user_message = {
         "role": "user",
-        "content": f"继续故事，注意输出格式正文+摘要，用户输入内容：{user_input}。"
+        "content": f"继续故事，注意输出格式正文+摘要，用户输入内容：{user_input}。未经指令禁止射精、高潮、切换场景或结束剧情"
     }
     messages.append(current_user_message)
 
