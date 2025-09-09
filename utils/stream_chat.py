@@ -1,11 +1,10 @@
 # utils/stream_chat.py
 import json
 import asyncio
-from datetime import datetime
-
 import httpx
 import logging
 from typing import AsyncGenerator
+from colorama import init, Fore, Style
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry, list_model_ids
 from utils.chat_history import ChatHistory
@@ -25,6 +24,8 @@ chat_history = ChatHistory(max_entries=10)  # 保存最近 10 条对话
 
 MAX_HISTORY_ENTRIES = 10  # 系统 prompt 中最多包含最近几条历史记录
 SAVE_STORY_SUMMARY_ONLY = True  # True=仅保存故事摘要，False=保存全部内容
+
+new_messages = "末日降临第一天，你意外绑定了无敌避难所。当外界还在为取暖、物资发愁时，你正悠闲地坐在恒温20度的避难所里，享用着鲜嫩多汁的牛排和醇香的红酒。手机屏幕不断闪烁，避难所物业群里信息爆炸：[避难所物业群] 莫晓晓：卧槽！外面冷得要死，谁他妈的把暖气给我修好！ 物业刘焕琴：请大家保持冷静。我正在检查供暖系统，暂时请大家穿厚一些。 张静：谁有退烧药？我妹妹发高烧了，有退烧药的私聊我，我。。。我可以提供“特殊”补偿！就在你浏览群消息时，一条私聊突然弹出： [私聊] 梁红： 学长，你还好吗？我已经一天没吃东西了，快饿死了...你那里有吃的吗？求求你，帮帮我吧"
 
 # -----------------------------
 # 角色加载简化函数
@@ -54,6 +55,23 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
 
     messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
 
+def print_messages_colored(messages):
+    print("\n--- 构建好的消息列表 messages ---")
+    for i, msg in enumerate(messages, 1):
+        role = msg.get("role", "unknown")
+        content = msg.get("content", "")
+        # 给不同角色加颜色
+        if role == "system":
+            color = Fore.CYAN
+        elif role == "user":
+            color = Fore.GREEN
+        elif role == "assistant":
+            color = Fore.MAGENTA
+        else:
+            color = Fore.WHITE
+
+        print(f"{color}[{i}] {role.upper()}:\n{content}\n{Style.RESET_ALL}")
+    print("--- End of messages ---\n")
 
 # -----------------------------
 # 核心功能：调用模型并流式返回
@@ -105,8 +123,9 @@ async def execute_model(
         messages.append({"role": "assistant", "content": e["assistant"]})
 
     # 当前用户输入
-    messages.append({"role": "user", "content": f"注意输出格式，正文+摘要,{user_input}"})
-
+    messages.append({"role": "user", "content": f"{user_input}"})
+    # 打印彩色消息列表
+    print_messages_colored(messages)
     payload = {
         "model": model_label,
         "stream": True,
@@ -197,10 +216,23 @@ async def main_loop():
     """主交互循环"""
     current_personas = get_default_personas()
     model_name = await select_model()
-    system_instructions = get_system_prompt("prompt02")
+    system_instructions = get_system_prompt("test")
     logger.info(f"[默认出场人物] {current_personas}")
     logger.info(f"[历史保存模式] {'仅故事摘要' if SAVE_STORY_SUMMARY_ONLY else '完整内容'}")
 
+    # -----------------------------
+    # 自动输入内容（游戏开始时自动触发）
+    # -----------------------------
+    # auto_start_input = "游戏开始！请生成初始剧情和世界介绍。"  # 这里换成你想自动输入的内容
+    auto_start_input = new_messages
+    logger.info(f"[自动输入] {auto_start_input}")
+    async for text_chunk in execute_model(model_name, auto_start_input, system_instructions, current_personas):
+        print(text_chunk, end="", flush=True)
+    logger.info("\n[生成完成] 自动输入已输出完成")
+
+    # -----------------------------
+    # 后续仍保留手动输入循环
+    # -----------------------------
     while True:
         user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
         logger.info(f"[用户输入] {user_input[:50]}{'...' if len(user_input) > 50 else ''}")
