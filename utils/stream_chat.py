@@ -197,7 +197,7 @@ async def main_loop():
     """主交互循环"""
     current_personas = get_default_personas()
     model_name = await select_model()
-    system_instructions = get_system_prompt("prompt_test")
+    system_instructions = get_system_prompt("prompt02")
     logger.info(f"[默认出场人物] {current_personas}")
     logger.info(f"[历史保存模式] {'仅故事摘要' if SAVE_STORY_SUMMARY_ONLY else '完整内容'}")
 
