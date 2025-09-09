@@ -55,6 +55,7 @@ async def execute_model_for_app(
     user_input: str,
     system_instructions: str,
     personas: list[str],
+    web_input: str = ""
 ) -> AsyncGenerator[str, None]:
     """
     专供 Web 使用的模型执行器
@@ -95,13 +96,14 @@ async def execute_model_for_app(
     if history_entries:
         summary_text = "\n".join([f"{e['assistant']}" for e in history_entries if e['assistant']])
         if summary_text:
-            messages.append({"role": "system", "content": f"历史摘要（仅参考，不要重复）：\n{summary_text}"})
+            messages.append({"role": "system", "content": f"历史摘要（仅参考，不要重复描写内容）：\n{summary_text}"})
 
     # ④ 当前用户输入
     current_user_message = {
         "role": "user",
-        "content": f"输出文字不少于3000字，注意输出格式正文+摘要，用户输入内容：{user_input}。未经指令禁止射精、高潮、切换场景或结束剧情"
+        "content": f"{web_input}，用户输入内容：{user_input}。"
     }
+
     messages.append(current_user_message)
 
     # 打印彩色消息列表

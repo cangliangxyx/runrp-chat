@@ -11,6 +11,8 @@
   const btnNew = document.getElementById("btn-new");
   const btnClearAll = document.getElementById("btn-clear-all");
   const convList = document.getElementById("conv-list");
+  const webInputEl = document.getElementById("web_input");
+
 
   // 遮罩层，用于小屏幕点击关闭侧栏
   const overlay = document.createElement("div");
@@ -203,6 +205,7 @@
     formData.append("prompt", prompt);
     formData.append("conversation_id", conv?.id || "");
     formData.append("history", JSON.stringify(conv?.messages || []));
+    formData.append("web_input", webInputEl?.value.trim() || ""); // ✅ 新增
 
     sendBtn.disabled = promptEl.disabled = true;
 

@@ -53,7 +53,8 @@ async def index(request: Request):
 async def chat(
     model: str = Form(...),
     prompt: str = Form(...),
-    system_rule: str = Form("default")
+    system_rule: str = Form("default"),
+    web_input: str = Form("")
 ):
     if model not in list_model_ids():
         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
@@ -69,7 +70,8 @@ async def chat(
                 model_name=model,
                 user_input=prompt,
                 system_instructions=system_prompt,
-                personas=current_personas
+                personas=current_personas,
+                web_input=web_input,
             ):
                 yield chunk
 
