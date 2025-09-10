@@ -1,3 +1,5 @@
+//custom.js
+
 // 加载可选人物列表
 async function loadPersonas() {
   const res = await fetch("/personas");

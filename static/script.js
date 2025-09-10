@@ -1,3 +1,5 @@
+// script.js
+
 (() => {
   // DOM
   const form = document.getElementById("chat-form");
