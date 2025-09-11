@@ -2,15 +2,13 @@
 
 import json
 import logging
-from datetime import datetime
 from typing import AsyncGenerator
 from colorama import init, Fore, Style
-
 import httpx
+
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
 from utils.chat_history import ChatHistory
-from utils.persona_loader import get_default_personas, load_persona
 from utils.message_builder import build_messages
 
 # -----------------------------
