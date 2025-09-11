@@ -39,11 +39,19 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
     append_personas_to_messages(messages, personas)
 
     # ③ 历史摘要
-    history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:-1]
+    history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
     if history_entries:
-        summary_text = "\n".join([f"{e['assistant']}" for e in history_entries if e['assistant']])
-        if summary_text:
-            messages.append({"role": "system", "content": f"历史摘要（仅参考，不要重复描写内容）：\n{summary_text}"})
+        # 提取非空的 assistant 内容
+        assistant_texts = [e['assistant'] for e in history_entries if e['assistant']]
+        if assistant_texts:
+            # 将历史摘要整理成一段清晰说明
+            summary_text = "\n".join(assistant_texts)
+            summary_content = (
+                "以下是之前的故事进展，仅供参考，请在此基础上继续创作，保持人物设定和事件连贯：\n"
+                f"{summary_text}\n"
+                "请不要重复已描述的内容，而是自然承接情节发展。"
+            )
+            messages.append({"role": "system", "content": summary_content})
 
     # ④ 当前输入
     current_user_message = {
