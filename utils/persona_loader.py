@@ -13,10 +13,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # 人物配置文件路径
 PERSONA_FILE = Path(__file__).parent.parent / "config" / "persona.json"
 
-# 默认主角名字
+# 主角名字
 DEFAULT_USER_NAME = "常亮"
 # 默认出场 NPC（除玩家）
-DEFAULT_NPC_NAMES = ["刘焕琴"]
+DEFAULT_NPC_NAMES = []
 
 
 def load_personas() -> Dict[str, Dict[str, Any]]:
@@ -31,16 +31,7 @@ def load_personas() -> Dict[str, Dict[str, Any]]:
 
 
 def load_persona(name: str) -> Dict[str, Any]:
-    """根据名字加载单个人物设定"""
-    if name == DEFAULT_USER_NAME:
-        # 默认玩家主角，可自定义属性
-        return {
-            "姓名": DEFAULT_USER_NAME,
-            "性别": "男",
-            "年龄": "23岁",
-            "身高": "180cm",
-        }
-
+    """根据名字加载单个人物设定（包括默认玩家主角）"""
     personas = load_personas()
     if name not in personas:
         raise KeyError(f"未找到 persona: {name}, 可选值: {list(personas.keys())}")
@@ -57,11 +48,18 @@ def get_default_personas() -> List[str]:
     获取默认出场人物列表
     默认包含玩家主角 {user} 和指定 NPC
     """
-    personas = [DEFAULT_USER_NAME]  # 玩家主角
     available = list_personas()
+
+    personas = []
+    if DEFAULT_USER_NAME in available:
+        personas.append(DEFAULT_USER_NAME)
+    else:
+        logger.warning(f"⚠️ persona.json 中没有找到 {DEFAULT_USER_NAME}，请补充！")
+
     for name in DEFAULT_NPC_NAMES:
         if name in available:
             personas.append(name)
+
     return personas
 
 
@@ -108,7 +106,7 @@ if __name__ == "__main__":
         print(f"{name}: {info}")
 
     print("\n单独取一个:")
-    print(load_persona("刘焕琴"))
+    print(load_persona("张静"))
 
     print("\n默认出场人物:")
     print(get_default_personas())

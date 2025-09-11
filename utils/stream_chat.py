@@ -9,7 +9,11 @@ from config.config import CLIENT_CONFIGS
 from config.models import model_registry, list_model_ids
 from utils.chat_history import ChatHistory
 from prompt.get_system_prompt import get_system_prompt
-from utils.persona_loader import select_personas, load_persona, get_default_personas
+from utils.persona_loader import select_personas, get_default_personas
+from utils.message_builder import build_messages
+
+# 初始化颜色输出
+init(autoreset=True)
 
 # -----------------------------
 # 日志配置
@@ -20,159 +24,84 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # -----------------------------
 # 全局变量
 # -----------------------------
-chat_history = ChatHistory(max_entries=10)  # 保存最近 10 条对话
+chat_history = ChatHistory(max_entries=10)
+MAX_HISTORY_ENTRIES = 10
+SAVE_STORY_SUMMARY_ONLY = True
 
-MAX_HISTORY_ENTRIES = 10  # 系统 prompt 中最多包含最近几条历史记录
-SAVE_STORY_SUMMARY_ONLY = True  # True=仅保存故事摘要，False=保存全部内容
-
-new_messages = "末日降临第一天，你意外绑定了无敌避难所。当外界还在为取暖、物资发愁时，你正悠闲地坐在恒温20度的避难所里，享用着鲜嫩多汁的牛排和醇香的红酒。手机屏幕不断闪烁，避难所物业群里信息爆炸：[避难所物业群] 莫晓晓：卧槽！外面冷得要死，谁他妈的把暖气给我修好！ 物业刘焕琴：请大家保持冷静。我正在检查供暖系统，暂时请大家穿厚一些。 张静：谁有退烧药？我妹妹发高烧了，有退烧药的私聊我，我。。。我可以提供“特殊”补偿！就在你浏览群消息时，一条私聊突然弹出： [私聊] 梁红： 学长，你还好吗？我已经一天没吃东西了，快饿死了...你那里有吃的吗？求求你，帮帮我吧"
+# 初始剧情
+AUTO_START_MESSAGE = (
+    "末日降临第一天，你意外绑定了无敌避难所。当外界还在为取暖、物资发愁时，你正悠闲地坐在恒温20度的避难所里，享用着鲜嫩多汁的牛排和醇香的红酒。"
+    "手机屏幕不断闪烁，避难所物业群里信息爆炸：\n"
+    "[避难所物业群] 王佩佩：外面冷得要死，谁能帮我的把暖气修好？\n"
+    "物业张静：请大家保持冷静。我正在检查供暖系统，暂时请大家穿厚一些。\n"
+    "刘焕琴：谁有退烧药？我妹妹发高烧了，有退烧药的私聊我，我……我可以提供“特殊”补偿！\n"
+    "就在你浏览群消息时，一条私聊突然弹出：\n"
+    "[私聊] 梁红： 学长，你还好吗？我已经一天没吃东西了，快饿死了...你那里有吃的吗？求求你，帮帮我吧。\n"
+    "我看着手机，准备先不回复手机里的任何消息，需要好好想想到底应该如何办"
+)
 
 # -----------------------------
-# 角色加载简化函数
+# 彩色打印 messages
 # -----------------------------
-def append_personas_to_messages(messages: list[dict], personas: list[str]) -> None:
-    """
-    将指定角色信息加载到 messages 中（作为 system message），完整返回所有字段。
-
-    Args:
-        messages: 消息列表，函数会直接 append
-        personas: 角色名称列表
-    """
-    persona_info = "玩家角色: 常亮\n"
-
-    for name in personas:
-        try:
-            persona_data = load_persona(name)
-            if isinstance(persona_data, dict):
-                # 将所有字段拼接为 key: value
-                info_lines = [f"{k}:{v}" for k, v in persona_data.items()]
-                persona_info += f"{name}: {', '.join(info_lines)}\n"
-            else:
-                persona_info += f"{name}: {str(persona_data)}\n"
-        except KeyError:
-            # 未找到的 NPC 直接跳过
-            continue
-
-    messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
-
 def print_messages_colored(messages):
     print("\n--- 构建好的消息列表 messages ---")
     for i, msg in enumerate(messages, 1):
         role = msg.get("role", "unknown")
-        content = msg.get("content", "")
-        # 给不同角色加颜色
-        if role == "system":
-            color = Fore.CYAN
-        elif role == "user":
-            color = Fore.GREEN
-        elif role == "assistant":
-            color = Fore.MAGENTA
-        else:
-            color = Fore.WHITE
-
-        print(f"{color}[{i}] {role.upper()}:\n{content}\n{Style.RESET_ALL}")
+        color = Fore.CYAN if role == "system" else Fore.GREEN if role == "user" else Fore.MAGENTA if role == "assistant" else Fore.WHITE
+        print(f"{color}[{i}] {role.upper()}:\n{msg.get('content','')}\n")
     print("--- End of messages ---\n")
 
 # -----------------------------
-# 核心功能：调用模型并流式返回
+# 调用模型并流式返回
 # -----------------------------
 async def execute_model(
-        model_name: str,
-        user_input: str,
-        system_instructions: str,
-        personas: list[str]
+    model_name: str,
+    user_input: str,
+    system_instructions: str,
+    personas: list[str]
 ) -> AsyncGenerator[str, None]:
-    """
-    调用指定模型并流式返回生成内容
-    - 系统规则放 system prompt
-    - 历史对话放 messages 的 user/assistant
-    - 流式输出
-    - 完成后保存聊天历史
-    """
     model_details = model_registry(model_name)
     client_key = model_details["client_name"]
     client_settings = CLIENT_CONFIGS[client_key]
 
-    base_url = client_settings["base_url"]
-    api_key = client_settings["api_key"]
-    model_label = model_details["label"]
+    logger.info(f"[调用模型] {model_details['label']} @ {client_settings['base_url']}")
 
-    logger.info(f"[调用模型] {model_label} @ {base_url}")
-
-    # -----------------------------
-    # 系统 prompt 拼接（仅规则/世界观）
-    # -----------------------------
-    system_prompt = system_instructions
-
-    # -----------------------------
-    # 消息列表
-    # -----------------------------
-    messages = [{"role": "system", "content": system_prompt}]
-
-    # -----------------------------
-    # 出场人物信息加载（简化版）
-    # -----------------------------
-    append_personas_to_messages(messages, personas)
-
-    # -----------------------------
-    # 最近历史对话（放 messages 中）
-    # -----------------------------
-    history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
-    for e in history_entries:
-        messages.append({"role": "user", "content": e["user"]})
-        messages.append({"role": "assistant", "content": e["assistant"]})
-
-    # 当前用户输入
-    messages.append({"role": "user", "content": f"{user_input}"})
-    # 打印彩色消息列表
+    messages = build_messages(system_instructions, personas, chat_history, user_input)
     print_messages_colored(messages)
-    payload = {
-        "model": model_label,
-        "stream": True,
-        "messages": messages
-    }
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
+
+    payload = {"model": model_details["label"], "stream": True, "messages": messages}
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {client_settings['api_key']}"}
 
     full_response_text = ""
-
-    # -----------------------------
-    # 异步请求模型接口（流式输出）
-    # -----------------------------
     try:
         async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream("POST", base_url, headers=headers, json=payload) as response:
+            async with client.stream("POST", client_settings["base_url"], headers=headers, json=payload) as response:
                 if response.status_code != 200:
                     logger.error(f"模型接口返回非200状态码: {response.status_code}")
                     return
-
                 async for line in response.aiter_lines():
-                    if not line or not line.startswith("data: "):
+                    if not (line and line.startswith("data: ")):
                         continue
-
                     data_str = line[len("data: "):].strip()
                     if data_str in ("[DONE]", ""):
                         continue
-
                     try:
                         chunk = json.loads(data_str)
-                    except json.JSONDecodeError:
-                        logger.warning(f"无效 JSON: {data_str}")
-                        continue
-
-                    choices = chunk.get("choices", [])
-                    if choices and "delta" in choices[0]:
-                        delta_content = choices[0]["delta"].get("content")
+                        choices = chunk.get("choices")
+                        if not choices or len(choices) == 0:  # 避免 IndexError
+                            continue
+                        delta = choices[0].get("delta", {})
+                        delta_content = delta.get("content")
                         if delta_content:
                             full_response_text += delta_content
                             yield delta_content
-
+                    except json.JSONDecodeError:
+                        logger.warning(f"无效 JSON: {data_str}")
+                        continue
     except httpx.RequestError as e:
         logger.error(f"请求模型接口异常: {e}")
-        logger.error("请求模型失败，请检查网络或接口设置。")
 
-    # -----------------------------
     # 保存历史
-    # -----------------------------
     if full_response_text.strip():
         if SAVE_STORY_SUMMARY_ONLY:
             summary = chat_history._extract_summary_from_assistant(full_response_text)
@@ -185,11 +114,11 @@ async def execute_model(
             chat_history.add_entry(user_input, full_response_text)
             logger.info("[对话已保存] 用户输入 + 模型回复")
 
+
 # -----------------------------
 # 模型选择
 # -----------------------------
 async def select_model() -> str:
-    """让用户选择模型"""
     available_models = list_model_ids()
     print("\n可用模型：")
     for i, m in enumerate(available_models):
@@ -202,66 +131,45 @@ async def select_model() -> str:
                 model_name = available_models[idx]
                 logger.info(f"[已选择模型] {model_name}")
                 return model_name
-            else:
-                print("无效选择，请重新输入。")
-                logger.warning(f"[选择错误] 用户选择了无效的模型编号: {idx + 1}")
+            print("无效选择，请重新输入。")
         except ValueError:
             print("请输入数字。")
-            logger.warning("[选择错误] 用户输入了非数字内容")
 
 # -----------------------------
-# 主循环（仅命令行用）
+# 主循环
 # -----------------------------
 async def main_loop():
-    """主交互循环"""
     current_personas = get_default_personas()
     model_name = await select_model()
     system_instructions = get_system_prompt("test")
     logger.info(f"[默认出场人物] {current_personas}")
-    logger.info(f"[历史保存模式] {'仅故事摘要' if SAVE_STORY_SUMMARY_ONLY else '完整内容'}")
 
-    # -----------------------------
-    # 自动输入内容（游戏开始时自动触发）
-    # -----------------------------
-    # auto_start_input = "游戏开始！请生成初始剧情和世界介绍。"  # 这里换成你想自动输入的内容
-    auto_start_input = new_messages
-    logger.info(f"[自动输入] {auto_start_input}")
-    async for text_chunk in execute_model(model_name, auto_start_input, system_instructions, current_personas):
+    # 自动输入初始剧情
+    logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
+    async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions, current_personas):
         print(text_chunk, end="", flush=True)
-    logger.info("\n[生成完成] 自动输入已输出完成")
+    logger.info("\n[生成完成] 初始剧情输出完成")
 
-    # -----------------------------
-    # 后续仍保留手动输入循环
-    # -----------------------------
     while True:
         user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
-        logger.info(f"[用户输入] {user_input[:50]}{'...' if len(user_input) > 50 else ''}")
-
         if user_input == "{clear}":
             chat_history.clear_history()
             logger.info("[操作] 历史记录已清空")
             continue
-
         if user_input == "{history}":
-            logger.info("[操作] 查看历史记录")
-            history_text = chat_history.format_history(MAX_HISTORY_ENTRIES)
-            logger.info(f"[历史记录]\n{history_text}")
+            print(chat_history.format_history(MAX_HISTORY_ENTRIES))
             continue
-
         if user_input.startswith("{switch}"):
             model_name = await select_model()
             continue
-
         if user_input.startswith("{personas}"):
             current_personas = await select_personas()
             logger.info(f"[人物更新] 当前出场人物: {current_personas}")
             continue
 
-        logger.info("[开始生成] 调用模型生成回复...")
         async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
             print(text_chunk, end="", flush=True)
         logger.info("\n[生成完成] 模型回复已输出完成")
 
 if __name__ == "__main__":
-    logger.info("[启动] Stream Chat 应用启动")
     asyncio.run(main_loop())
