@@ -20,7 +20,7 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
     messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
 
 
-def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = ""):
+def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = "", nsfw: bool = False):
     """
     构建 messages 列表，供模型调用
     Args:
@@ -35,10 +35,18 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
     # ① 系统规则
     messages.append({"role": "system", "content": system_instructions})
 
-    # ② 出场人物
+    # ② NSFW 内容
+    if nsfw:
+        from prompt.get_system_prompt import get_system_prompt
+        try:
+            nsfw_prompt = get_system_prompt("nsfw")  # 确保 PROMPT_FILES 中有 "nsfw" 键
+            messages.append({"role": "system", "content": nsfw_prompt})
+        except KeyError:
+            messages.append({"role": "system", "content": "⚠️ NSFW 模式已开启，但未找到 nsfw 提示内容。"})
+    # ③ 出场人物
     append_personas_to_messages(messages, personas)
 
-    # ③ 历史摘要
+    # ④ 历史摘要
     history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
     if history_entries:
         # 提取非空的 assistant 内容
@@ -53,7 +61,7 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
             )
             messages.append({"role": "system", "content": summary_content})
 
-    # ④ 当前输入
+    # ⑤ 当前输入
     current_user_message = {
         "role": "user",
         "content": f"{web_input} 用户输入内容：{user_input}" if web_input else user_input

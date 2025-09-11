@@ -53,11 +53,13 @@ async def execute_model_for_app(
     user_input: str,
     system_instructions: str,
     personas: list[str],
-    web_input: str = ""
+    web_input: str = "",
+    nsfw: bool = True,
 ) -> AsyncGenerator[str, None]:
 
+    print("nsfw = ", nsfw)
     # 构建 messages
-    messages = build_messages(system_instructions, personas, chat_history, user_input, web_input)
+    messages = build_messages(system_instructions, personas, chat_history, user_input, web_input, nsfw=nsfw)
 
     print_messages_colored(messages)
 

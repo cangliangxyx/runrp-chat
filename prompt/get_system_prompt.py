@@ -7,6 +7,7 @@ PROMPT_FILES = {
     "prompt02": "system_prompt_02.md",
     "test": "system_prompt_test.md",
     "temp": "temp.md",
+    "nsfw": "system_prompt_nsfw.md",
 }
 
 PROMPT_CACHE = {}

@@ -54,8 +54,11 @@ async def chat(
     model: str = Form(...),
     prompt: str = Form(...),
     system_rule: str = Form("default"),
-    web_input: str = Form("")
+    web_input: str = Form(""),
+    nsfw: str = Form("true")
 ):
+    logger.info(f"[chat] 接收到表单参数: model={model}, system_rule={system_rule}, nsfw={nsfw}")
+
     if model not in list_model_ids():
         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
 
@@ -63,6 +66,8 @@ async def chat(
         system_prompt = get_system_prompt(system_rule)
     except KeyError:
         raise HTTPException(status_code=400, detail=f"system_rule '{system_rule}' 不存在")
+
+    nsfw_enabled = nsfw.lower() == "true"
 
     try:
         async def event_stream():
@@ -72,6 +77,7 @@ async def chat(
                 system_instructions=system_prompt,
                 personas=current_personas,
                 web_input=web_input,
+                nsfw=nsfw_enabled,
             ):
                 yield chunk
 
