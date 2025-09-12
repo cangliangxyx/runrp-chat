@@ -42,7 +42,7 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
             nsfw_prompt = get_system_prompt("nsfw")  # 确保 PROMPT_FILES 中有 "nsfw" 键
             messages.append({"role": "system", "content": nsfw_prompt})
         except KeyError:
-            messages.append({"role": "system", "content": "⚠️ NSFW 模式已开启，但未找到 nsfw 提示内容。"})
+            messages.append({"role": "system", "content": "NSFW 模式已开启，但未找到 nsfw 提示内容。"})
     # ③ 出场人物
     append_personas_to_messages(messages, personas)
 

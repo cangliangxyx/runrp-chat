@@ -1,16 +1,18 @@
 # config.py
+from config.decrypt_message import decrypt_message
 
 CLIENT_CONFIGS = {
     "deepseek": {
         "base_url": "https://api.deepseek.com/chat/completions",
-        "api_key": "sk-fffb168c0ea14204842cbc395c960ccc"
+        "api_key": decrypt_message("gAAAAABow8YJmmt1tfhSGhWbPybNAt97zdRAiHlXkoXoBJ_dTUeqG3XPogI-KDRq86O4HheuDuE-zjfhkQW2lbzs0eSK8vMAkPtLb7NFGzzymyhcX8A7AWyc26ayx66e7-rJdwAzeWke")
     },
+    # chat_runrp
     "link_api": {
         "base_url": "https://api.linkapi.org/v1/chat/completions",
-        "api_key": "sk-rz5YqQesySPRCTM89gUmpXaLeRh9xrukCsJGfX3ODamaebAM"
+        "api_key": decrypt_message("gAAAAABow8ZswUlACpA9hOmG1AxERQC4EoFyPFDqlPZbAUC0g5K_cZ2jsA9j3tCg4nWy5oAgwDO2V25wciqij-qwaLQW-vLzI9joGVLNIhVBV98R902Kh0oAU_N0w3TXEmB9Klng87EIiSUO4FFYu0GSNN1vD56HXw==")
     },
     "claude_api": {
         "base_url": "https://chat.cloudapi.vip/v1/chat/completions",
-        "api_key": "sk-J4J5HnTXJHqDDYi4mwgAl2IPPflXZSRerKwyKKtPiIC1aTHQ"
+        "api_key": decrypt_message("gAAAAABow8ZKhmf8JW3S29GXjaJMqtnaHQglS8u7T8AMefKK4JoqfhV9y5J6vJIRBtRlmxf9Upb_XgUkRqqJLFgU_Inwrg2pGCktnUz5weLhB3RYjFif5lvtIAoCtMvit5rs2O_909i_ZwPkMKYEGRWOuhuKrwOgiA==")
     }
 }
