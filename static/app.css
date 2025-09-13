@@ -1,45 +1,52 @@
-/* /static/app.css */
-
-/* 主题变量 */
+/* =========================
+   全局主题变量
+   ========================= */
 :root {
-  --bg: #0b0f19;
-  --panel: #0f1525;
-  --muted: #9aa4b2;
-  --text: #e6edf3;
-  --border: #1e2638;
-  --user-bubble: #1b253b;
-  --ai-bubble: #131b2e;
-  --btn: #1f6feb;
-  --btn-hover: #2b77f0;
+  --bg: #0b0f19;           /* 页面整体背景色 */
+  --panel: #0f1525;        /* 面板背景色（顶部栏、输入框） */
+  --muted: #9aa4b2;        /* 次要文字颜色 */
+  --text: #e6edf3;         /* 主文字颜色 */
+  --border: #1e2638;       /* 边框颜色 */
+  --user-bubble: #1b253b;  /* 用户气泡背景 */
+  --ai-bubble: #131b2e;    /* AI气泡背景 */
+  --btn: #1f6feb;          /* 按钮主色 */
+  --btn-hover: #2b77f0;    /* 按钮悬停颜色 */
 
-  --sidebar-bg: #0c1324;
-  --sidebar-w: 280px;
+  --sidebar-bg: #0c1324;   /* 左侧边栏背景色 */
+  --sidebar-w: 280px;      /* 左侧边栏宽度 */
 }
 
+/* =========================
+   全局元素基础设置
+   ========================= */
 * { box-sizing: border-box; }
 
 html, body {
   height: 100%;
-  min-height: -webkit-fill-available;
+  min-height: -webkit-fill-available; /* 兼容 iOS Safari */
   margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-/* 带侧栏布局 */
+/* =========================
+   带侧栏的整体布局
+   ========================= */
 .app.with-sidebar {
   display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
-  grid-template-rows: 100svh;
-  min-height: -webkit-fill-available;
+  grid-template-columns: var(--sidebar-w) 1fr; /* 左侧固定宽度，右侧自适应 */
+  grid-template-rows: 90svh;                  /* 整个高度等于视口高度 */
+  min-height: -webkit-fill-available;          /* 兼容 Safari */
 }
 
-/* 侧栏 */
+/* =========================
+   左侧边栏
+   ========================= */
 .sidebar {
-  display: flex;
+  /*display: flex;*/
   flex-direction: column;
-  height: 100%;
+  height: 100%;                  /* 高度继承父容器的 grid 行高 */
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   padding: 12px;
@@ -48,11 +55,14 @@ html, body {
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+/* 展开时添加阴影效果 */
 .sidebar.open {
   transform: translateX(0%);
   box-shadow: 0 0 15px rgba(0,0,0,0.4);
 }
 
+/* 侧栏头部：标题和按钮 */
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -60,9 +70,12 @@ html, body {
   gap: 8px;
   padding: 4px 4px 8px;
 }
+
 .sidebar-title { font-weight: 600; }
 
-/* 按钮 */
+/* =========================
+   侧栏按钮样式
+   ========================= */
 .sidebar-new,
 .sidebar-clear,
 .menu-btn,
@@ -74,14 +87,19 @@ html, body {
   font-size: 0.9rem;
 }
 
+/* 新建对话按钮 */
 .sidebar-new {
   border: 1px solid var(--btn);
   background: var(--btn);
   color: white;
   padding: 6px 10px;
 }
-.sidebar-new:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
+.sidebar-new:hover {
+  background: var(--btn-hover);
+  border-color: var(--btn-hover);
+}
 
+/* 清空按钮 */
 .sidebar-clear {
   border: 1px solid var(--border);
   background: var(--panel);
@@ -91,6 +109,7 @@ html, body {
 .sidebar-clear:hover,
 .menu-btn:hover { background: #121a2c; }
 
+/* 清空当前对话按钮 */
 .clear-history-btn {
   border: 1px solid var(--border);
   background: var(--panel);
@@ -100,7 +119,9 @@ html, body {
   line-height: 28px;
 }
 
-/* 会话列表 */
+/* =========================
+   会话列表样式
+   ========================= */
 .sidebar-list {
   flex: 1;
   overflow: auto;
@@ -111,6 +132,7 @@ html, body {
   padding-right: 4px;
 }
 
+/* 单个会话项 */
 .conv-item {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -124,10 +146,22 @@ html, body {
 }
 .conv-item:hover { background: rgba(255,255,255,0.04); }
 .conv-item.active { border-color: var(--border); background: rgba(255,255,255,0.06); }
-.conv-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+
+.conv-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
 .conv-meta { font-size: 12px; color: var(--muted); }
 
-.conv-actions { display: flex; gap: 6px; align-items: center; }
+/* 会话操作按钮（删除、重命名） */
+.conv-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
 .btn-icon {
   border: 1px solid transparent;
   background: transparent;
@@ -145,6 +179,7 @@ html, body {
   background: rgba(255, 154, 162, 0.08);
 }
 
+/* 侧栏底部区域：web输入框、人物、开关等 */
 .sidebar-footer {
   border-top: 1px solid var(--border);
   padding-top: 8px;
@@ -154,15 +189,19 @@ html, body {
 
 .muted { color: var(--muted); }
 
-/* 内容区 */
+/* =========================
+   主内容区布局
+   ========================= */
 .content {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto; /* 顶部栏 + 主体 + 底部栏 */
   height: 100svh;
   min-height: -webkit-fill-available;
 }
 
-/* 顶部栏 */
+/* =========================
+   顶部栏
+   ========================= */
 .topbar {
   display: flex;
   align-items: center;
@@ -171,16 +210,26 @@ html, body {
   border-bottom: 1px solid var(--border);
   background: linear-gradient(180deg, rgba(122,162,247,0.06), transparent 60%);
 }
+
 .menu-btn {
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
   padding: 6px 10px;
 }
+
 .brand { font-weight: 600; letter-spacing: 0.2px; }
 
-.controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+/* 模型选择、规则选择区域 */
+.controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .model-label { font-size: 12px; color: var(--muted); }
+
 .model-select {
   appearance: none;
   background: var(--panel);
@@ -191,13 +240,18 @@ html, body {
   min-width: 100px;
 }
 
-/* 聊天区 */
+/* =========================
+   聊天区样式
+   ========================= */
 .main { overflow: auto; }
+
 .chat-container {
-  max-width: 600px;
+  width: 100%;
+  max-width: clamp(95%, 1500px, 90vw); /* 更优雅的自适应 */
   margin: 0 auto;
   padding: 16px 16px 120px;
 }
+
 .chat-messages {
   display: flex;
   flex-direction: column;
@@ -206,11 +260,11 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-/* 聊天气泡宽度调整：允许更宽，兼顾自适应 */
+
+/* 聊天气泡通用 */
 .msg { display: flex; width: 100%; }
 .msg .bubble {
-  /*max-width: min(92ch, 95%);*/
-  max-width: min(800px, 98%);
+  max-width: min(1000px, 95%);
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--border);
@@ -218,18 +272,24 @@ html, body {
   word-break: break-word;
   line-height: 1.7;
 }
+
+/* 用户气泡靠右显示 */
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
   background: var(--user-bubble);
   border-radius: 16px 6px 16px 6px;
 }
+
+/* AI气泡靠左显示 */
 .msg.assistant { justify-content: flex-start; }
 .msg.assistant .bubble {
   background: var(--ai-bubble);
   border-radius: 6px 16px 6px 16px;
 }
 
-/* 底部输入栏 */
+/* =========================
+   底部输入栏
+   ========================= */
 .bottombar {
   position: fixed;
   bottom: 0;
@@ -241,6 +301,7 @@ html, body {
   padding: 12px 16px 16px;
   z-index: 50;
 }
+
 .chat-form {
   max-width: 600px;
   margin: 0 auto;
@@ -248,6 +309,7 @@ html, body {
   grid-template-columns: 1fr auto;
   gap: 10px;
 }
+
 #prompt {
   width: 100%;
   min-height: 48px;
@@ -263,6 +325,7 @@ html, body {
 }
 #prompt::placeholder { color: var(--muted); }
 
+/* 发送按钮 */
 .send-btn {
   height: 48px;
   padding: 0 18px;
@@ -282,7 +345,9 @@ html, body {
   text-align: center;
 }
 
-/* 出场人物相关样式 */
+/* =========================
+   出场人物选择、显示
+   ========================= */
 .personas-selection, .current-personas {
   margin-top: 10px;
   font-size: 0.9rem;
@@ -290,7 +355,9 @@ html, body {
 .personas-selection label { display: block; margin-bottom: 2px; }
 .current-personas span { color: #007bff; }
 
-/* 侧栏编辑输入框 */
+/* =========================
+   会话标题输入框
+   ========================= */
 .title-input {
   width: 100%;
   padding: 6px 8px;
@@ -302,17 +369,45 @@ html, body {
 }
 .title-input::placeholder { color: var(--muted); }
 
-/* 响应式优化 */
+/* =========================
+   响应式适配 手机
+   ========================= */
 @media (max-width: 600px) {
-  .app.with-sidebar { grid-template-columns: 0 1fr; }
+  .app.with-sidebar {
+    grid-template-columns: 0 1fr; /* 隐藏左侧栏 */
+  }
+
+  .sidebar {
+    position: fixed;
+    z-index: 20;
+    width: var(--sidebar-w);
+    transform: translateX(-100%); /* 默认收起 */
+    height: 80svh;               /* 高度覆盖整个屏幕 */
+    min-height: -webkit-fill-available;
+  }
+
+  .sidebar.open {
+    transform: translateX(0%);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+  }
+}
+/* =========================
+   响应式适配 pad
+   ========================= */
+@media (max-width: 1280px) {
+  .app.with-sidebar {
+    display: block; /* 或 grid-template-columns: 1fr; */
+  }
+
   .sidebar {
     position: fixed;
     z-index: 20;
     width: var(--sidebar-w);
     transform: translateX(-100%);
-    height: 100svh;
+    height: 80svh;
     min-height: -webkit-fill-available;
   }
+
   .sidebar.open {
     transform: translateX(0%);
     box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
