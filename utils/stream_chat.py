@@ -11,6 +11,7 @@ from utils.chat_history import ChatHistory
 from prompt.get_system_prompt import get_system_prompt
 from utils.persona_loader import select_personas, get_default_personas
 from utils.message_builder import build_messages
+from utils.print_messages_colored import print_messages_colored
 
 # 初始化颜色输出
 init(autoreset=True)
@@ -24,11 +25,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # -----------------------------
 # 全局变量
 # -----------------------------
-chat_history = ChatHistory(max_entries=10)
-MAX_HISTORY_ENTRIES = 10
-SAVE_STORY_SUMMARY_ONLY = True
+chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
+MAX_HISTORY_ENTRIES = 1                     # 最近 10 条对话传给模型
+SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
 
+# -----------------------------
 # 初始剧情
+# -----------------------------
 # AUTO_START_MESSAGE = (
 #     "末日降临第一天，你意外绑定了无敌避难所。当外界还在为取暖、物资发愁时，你正悠闲地坐在恒温20度的避难所里，享用着鲜嫩多汁的牛排和醇香的红酒。"
 #     "手机屏幕不断闪烁，避难所物业群里信息爆炸：\n"
@@ -42,24 +45,13 @@ SAVE_STORY_SUMMARY_ONLY = True
 AUTO_START_MESSAGE = "你好"
 
 # -----------------------------
-# 彩色打印 messages
-# -----------------------------
-def print_messages_colored(messages):
-    print("\n--- 构建好的消息列表 messages ---")
-    for i, msg in enumerate(messages, 1):
-        role = msg.get("role", "unknown")
-        color = Fore.CYAN if role == "system" else Fore.GREEN if role == "user" else Fore.MAGENTA if role == "assistant" else Fore.WHITE
-        print(f"{color}[{i}] {role.upper()}:\n{msg.get('content','')}\n")
-    print("--- End of messages ---\n")
-
-# -----------------------------
 # 调用模型并流式返回
 # -----------------------------
 async def execute_model(
     model_name: str,
     user_input: str,
     system_instructions: str,
-    personas: list[str]
+    personas: list[str],
 ) -> AsyncGenerator[str, None]:
     model_details = model_registry(model_name)
     client_key = model_details["client_name"]
@@ -68,6 +60,7 @@ async def execute_model(
     logger.info(f"[调用模型] {model_details['label']} @ {client_settings['base_url']}")
 
     messages = build_messages(system_instructions, personas, chat_history, user_input)
+
     print_messages_colored(messages)
 
     payload = {"model": model_details["label"], "stream": True, "messages": messages}
@@ -140,9 +133,9 @@ async def select_model() -> str:
 # 主循环
 # -----------------------------
 async def main_loop():
-    current_personas = get_default_personas()
-    model_name = await select_model()
-    system_instructions = get_system_prompt("default")
+    current_personas = get_default_personas()           # 人物加载
+    model_name = await select_model()                   # 模型选择
+    system_instructions = get_system_prompt("nsxt")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
 
     # 自动输入初始剧情

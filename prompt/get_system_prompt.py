@@ -2,6 +2,7 @@ from pathlib import Path
 
 PROMPT_FILES = {
     "developer":"system_prompt_developer.md",
+    "nsxt": "system_prompt_nsxt.md",
     "default": "system_prompt_def.md",
     "prompt01": "system_prompt_01.md",
     "prompt02": "system_prompt_02.md",

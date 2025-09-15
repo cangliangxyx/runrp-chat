@@ -3,13 +3,14 @@
 import json
 import logging
 from typing import AsyncGenerator
-from colorama import init, Fore, Style
+from colorama import init
 import httpx
 
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
 from utils.chat_history import ChatHistory
 from utils.message_builder import build_messages
+from utils.print_messages_colored import print_messages_colored
 
 # -----------------------------
 # 初始化 colorama
@@ -25,25 +26,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # -----------------------------
 # 全局变量
 # -----------------------------
-chat_history = ChatHistory(max_entries=1)  # 只保留最近 50 条对话
+chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
 MAX_HISTORY_ENTRIES = 1                   # 最近 10 条对话传给模型
 SAVE_STORY_SUMMARY_ONLY = True             # 只保存摘要，避免文件太大
-
-# -----------------------------
-# 彩色打印 messages
-# -----------------------------
-def print_messages_colored(messages):
-    print("\n--- 构建好的消息列表 messages ---")
-    for i, msg in enumerate(messages, 1):
-        role = msg.get("role", "unknown")
-        content = msg.get("content", "")
-        color = {
-            "system": Fore.CYAN,
-            "user": Fore.GREEN,
-            "assistant": Fore.MAGENTA
-        }.get(role, Fore.WHITE)
-        print(f"{color}[{i}] {role.upper()}:\n{content}\n{Style.RESET_ALL}")
-    print("--- End of messages ---\n")
 
 # -----------------------------
 # 流式调用模型
