@@ -2,7 +2,7 @@
 
 from utils.persona_loader import load_persona
 
-MAX_HISTORY_ENTRIES = 10  # 最近几条对话传给模型
+# MAX_HISTORY_ENTRIES = 1  # 最近几条对话传给模型
 
 def append_personas_to_messages(messages: list[dict], personas: list[str]) -> None:
     """
@@ -20,7 +20,7 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
     messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
 
 
-def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = "", nsfw: bool = False):
+def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10):
     """
     构建 messages 列表，供模型调用
     Args:
@@ -30,6 +30,7 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
         user_input: 用户输入
         web_input: 可选的 Web 前端输入（用于区分）
     """
+    MAX_HISTORY_ENTRIES = max_history_entries
     messages = []
 
     # ① 系统规则

@@ -44,7 +44,7 @@ async def execute_model_for_app(
 
     print("nsfw = ", nsfw)
     # 构建 messages
-    messages = build_messages(system_instructions, personas, chat_history, user_input, web_input, nsfw=nsfw)
+    messages = build_messages(system_instructions, personas, chat_history, user_input, web_input, nsfw=nsfw, max_history_entries=MAX_HISTORY_ENTRIES)
 
     print_messages_colored(messages)
 

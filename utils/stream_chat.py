@@ -4,7 +4,7 @@ import asyncio
 import httpx
 import logging
 from typing import AsyncGenerator
-from colorama import init, Fore, Style
+from colorama import init
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry, list_model_ids
 from utils.chat_history import ChatHistory
@@ -42,7 +42,7 @@ SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太�
 #     "[私聊] 梁红： 学长，你还好吗？我已经一天没吃东西了，快饿死了...你那里有吃的吗？求求你，帮帮我吧。\n"
 #     "我看着手机，准备先不回复手机里的任何消息，需要好好想想到底应该如何办"
 # )
-AUTO_START_MESSAGE = "我下班的地铁上，突然发生了不可思议的事情"
+AUTO_START_MESSAGE = "我下班的地铁上，突然发生了不可思议的事情，系统的出现和绑定的小巧丰满的舞蹈系女生"
 
 # -----------------------------
 # 调用模型并流式返回
@@ -59,7 +59,7 @@ async def execute_model(
 
     logger.info(f"[调用模型] {model_details['label']} @ {client_settings['base_url']}")
 
-    messages = build_messages(system_instructions, personas, chat_history, user_input)
+    messages = build_messages(system_instructions, personas, chat_history, user_input, max_history_entries=MAX_HISTORY_ENTRIES)
 
     print_messages_colored(messages)
 
