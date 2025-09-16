@@ -2,9 +2,10 @@
 from config.decrypt_message import decrypt_message
 
 CLIENT_CONFIGS = {
+    # deepseek
     "deepseek": {
         "base_url": "https://api.deepseek.com/chat/completions",
-        "api_key": decrypt_message("gAAAAABow8YJmmt1tfhSGhWbPybNAt97zdRAiHlXkoXoBJ_dTUeqG3XPogI-KDRq86O4HheuDuE-zjfhkQW2lbzs0eSK8vMAkPtLb7NFGzzymyhcX8A7AWyc26ayx66e7-rJdwAzeWke")
+        "api_key": decrypt_message("gAAAAABoySFC3kuOW6knCccmuo4tEfridSxwGubYuzaqgYiPJ3Il1c4HH26N1GZT2CjbZR0F3weJjztTSW0lz8azQ4ioSaTRvnIqdMx_TYJTuPBZAV4iNL0ixY2nT1cE7Lfrbz-U45-0")
     },
     # chat_runrp
     "link_api": {
