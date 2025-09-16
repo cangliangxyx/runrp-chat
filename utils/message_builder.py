@@ -57,9 +57,9 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
             # 将历史摘要整理成一段清晰说明
             summary_text = "\n".join(assistant_texts)
             summary_content = (
-                "以下是之前的故事进展，仅供参考，请在此基础上继续创作，保持人物设定和事件连贯：\n"
+                "以下是之前的故事进展，仅供参考，请在此基础上参考后在继续创作，保持人物设定和事件的连贯：\n"
                 f"{summary_text}\n"
-                "请不要重复已描述的内容，而是自然承接情节发展。"
+                "请不要重复已描述的内容，而是自然承接情节发展，人物描写要复合性格特点。"
             )
             messages.append({"role": "system", "content": summary_content})
 
