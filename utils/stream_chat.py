@@ -122,7 +122,7 @@ async def main_loop():
     logger.info(f"[默认出场人物] {current_personas}")
 
     # 初使剧情，自动填充
-    AUTO_START_MESSAGE = "继续故事"
+    AUTO_START_MESSAGE = "温馨剧情，放过小小，去客厅抱着我的可爱小女友开始安抚她的心情"
 
     # 自动输入初始剧情
     logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
