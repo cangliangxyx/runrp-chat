@@ -122,7 +122,7 @@ async def main_loop():
     logger.info(f"[默认出场人物] {current_personas}")
 
     # 初使剧情，自动填充
-    AUTO_START_MESSAGE = "我抱着糯糯，她看着我说老公，你为什么不要糯糯的小穴？是不是糯糯的小穴不够好，老公不喜欢？我吻着她说道，好老婆老公要等一个特别的日子才要你的小穴给你完整破处，这段时间我会先调教你的乳房、嘴巴、屁眼，让糯糯学会用这些部位让老公舒服。糯糯红着脸说坏老公，糯糯都听你的，整个人都是老公的。"
+    AUTO_START_MESSAGE = "继续故事"
 
     # 自动输入初始剧情
     logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
@@ -150,6 +150,5 @@ async def main_loop():
         async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
             print(text_chunk, end="", flush=True)
         logger.info("\n[生成完成] 模型回复已输出完成")
-
 if __name__ == "__main__":
     asyncio.run(main_loop())
