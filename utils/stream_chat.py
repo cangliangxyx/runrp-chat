@@ -30,21 +30,6 @@ MAX_HISTORY_ENTRIES = 1                     # 最近 10 条对话传给模型
 SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
 
 # -----------------------------
-# 初始剧情
-# -----------------------------
-# AUTO_START_MESSAGE = (
-#     "末日降临第一天，你意外绑定了无敌避难所。当外界还在为取暖、物资发愁时，你正悠闲地坐在恒温20度的避难所里，享用着鲜嫩多汁的牛排和醇香的红酒。"
-#     "手机屏幕不断闪烁，避难所物业群里信息爆炸：\n"
-#     "[避难所物业群] 王佩佩：外面冷得要死，谁能帮我的把暖气修好？\n"
-#     "物业张静：请大家保持冷静。我正在检查供暖系统，暂时请大家穿厚一些。\n"
-#     "刘焕琴：谁有退烧药？我妹妹发高烧了，有退烧药的私聊我，我……我可以提供“特殊”补偿！\n"
-#     "就在你浏览群消息时，一条私聊突然弹出：\n"
-#     "[私聊] 梁红： 学长，你还好吗？我已经一天没吃东西了，快饿死了...你那里有吃的吗？求求你，帮帮我吧。\n"
-#     "我看着手机，准备先不回复手机里的任何消息，需要好好想想到底应该如何办"
-# )
-AUTO_START_MESSAGE = "下班地铁上触发女神系统，绑定了一个叫苏糯糯的20岁美术系巨乳萝莉害羞身体异常敏感，长相小巧可爱黑长直的头发柔顺的垂到蜜桃臀，150的身高配合g罩杯乳房和丰满的翘臀，腰部则纤细异常巴掌大小，从背后让人心动不已可玩性极强"
-
-# -----------------------------
 # 调用模型并流式返回
 # -----------------------------
 async def execute_model(
@@ -58,9 +43,7 @@ async def execute_model(
     client_settings = CLIENT_CONFIGS[client_key]
 
     logger.info(f"[调用模型] {model_details['label']} @ {client_settings['base_url']}")
-
-    messages = build_messages(system_instructions, personas, chat_history, user_input, max_history_entries=MAX_HISTORY_ENTRIES)
-
+    messages = build_messages(system_instructions, personas, chat_history, user_input, max_history_entries=MAX_HISTORY_ENTRIES, optional_message="")
     print_messages_colored(messages)
 
     payload = {"model": model_details["label"], "stream": True, "messages": messages}
@@ -137,6 +120,9 @@ async def main_loop():
     model_name = await select_model()                   # 模型选择
     system_instructions = get_system_prompt("nsxt")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
+
+    # 初使剧情，自动填充
+    AUTO_START_MESSAGE = "我抱着糯糯，她看着我说老公，你为什么不要糯糯的小穴？是不是糯糯的小穴不够好，老公不喜欢？我吻着她说道，好老婆老公要等一个特别的日子才要你的小穴给你完整破处，这段时间我会先调教你的乳房、嘴巴、屁眼，让糯糯学会用这些部位让老公舒服。糯糯红着脸说坏老公，糯糯都听你的，整个人都是老公的。"
 
     # 自动输入初始剧情
     logger.info(f"[自动输入] {AUTO_START_MESSAGE}")

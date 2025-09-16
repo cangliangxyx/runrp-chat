@@ -20,7 +20,7 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
     messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
 
 
-def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10):
+def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10,optional_message: str = None ):
     """
     构建 messages 列表，供模型调用
     Args:
@@ -29,6 +29,7 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
         chat_history: ChatHistory 对象
         user_input: 用户输入
         web_input: 可选的 Web 前端输入（用于区分）
+        optional_message: 可选消息，如果有值则插入
     """
     MAX_HISTORY_ENTRIES = max_history_entries
     messages = []
@@ -69,11 +70,17 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
     }
     messages.append(current_user_message)
 
+    # ⑥ 可选插入消息
+    if optional_message:  # 只有有值才插入
+        messages.append({"role": "system", "content": optional_message})
+
     return messages
 
 if __name__ == "__main__":
     from utils.persona_loader import get_default_personas
     from utils.chat_history import ChatHistory
+
+    MAX_HISTORY_ENTRIES = 1
 
     # 准备测试数据
     system_prompt = "系统提示：一个测试消息。"
