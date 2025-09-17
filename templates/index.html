@@ -1,9 +1,15 @@
+<!-- templates/index.html -->
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <title>runrp-chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!--  <link rel="stylesheet" href="/static/style.css?v=1.0.2" />-->
+<!--  <link rel="stylesheet" href="/static/custom.css?v=1.0.0" />-->
+<!--  <script src="/static/script.js?v=1.0.2" defer></script>-->
+<!--  <script src="/static/custom.js?v=1.0.0" defer></script>-->
   <link rel="stylesheet" href="/static/app.css?v=1.0.1" />
   <script src="/static/app.js?v=1.0.0" defer></script>
 </head>
@@ -42,6 +48,8 @@
           <strong>当前出场人物:</strong>
           <span id="current-personas-display">无</span>
         </div>
+
+        <button class="sidebar-clear" id="btn-clear-all" title="清空全部历史">清</button>
         <small class="muted">本地保存 · 自动持久化</small>
       </div>
     </aside>
