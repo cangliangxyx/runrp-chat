@@ -118,11 +118,11 @@ async def select_model() -> str:
 async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
-    system_instructions = get_system_prompt("nsxt")     # 获取默认配置文件
+    system_instructions = get_system_prompt("lamnq")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
 
     # 初使剧情，自动填充
-    AUTO_START_MESSAGE = "在下班的地铁上系统启动，并绑定了一个叫苏糯糯的20岁美术系小萝莉，150的身高却有着不符合的身体的g乳、翘臀、蜂腰，乌黑柔顺的长发自然的散落在蜜桃臀上，从后面看简直是个完美的收藏品，系统给出的新手大礼包让她的初始好感度/臣服度都在了80，只要完成初始任务她将会是我的完美女友"
+    AUTO_START_MESSAGE = "在下班的地铁上碰见了我的小女友苏糯糯，大三美术系的苏糯糯，是个身高150cm的行走“甜心炸弹”。她天生一副纯真萝莉脸，性格甜美爱撒娇，是学长们心中最想呵护的小学妹。但没人知道，在她宽松的画画服下，是怎样一具颠倒众生的尤物身躯。92G/58/91的夸张三围在她身上显得无比和谐。那对G罩杯的雪白巨乳随着她的步伐微微颤动，纤细的腰肢仿佛一掐就断，而圆润挺翘的臀部则像磁石般吸引着所有目光。她就是天使面孔与魔鬼身材最完美的结合体。"
 
     # 自动输入初始剧情
     logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
