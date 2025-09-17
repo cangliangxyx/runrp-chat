@@ -1,14 +1,16 @@
+# prompt/get_system_prompt.py
+
 from pathlib import Path
 
 PROMPT_FILES = {
     "developer":"system_prompt_developer.md",
-    "nsxt": "system_prompt_nsxt.md",
+    "lamnq": "system_prompt_01.md",
+    "ns_system": "system_prompt_03.md",
     "default": "system_prompt_def.md",
-    "prompt01": "system_prompt_01.md",
     "prompt02": "system_prompt_02.md",
     "test": "system_prompt_test.md",
-    "temp": "temp.md",
     "nsfw": "system_prompt_nsfw.md",
+    "temp": "temp.md",
 }
 
 PROMPT_CACHE = {}
