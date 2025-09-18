@@ -5,7 +5,9 @@ import re
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ChatHistory:
     """
@@ -36,7 +38,11 @@ class ChatHistory:
         重新从文件加载最新的聊天记录。
         适用于文件被外部修改后需要手动同步内存的情况。
         """
+        before_count = len(self.entries)
+        logger.info(f"[ChatHistory] 重新加载历史记录，当前内存中有 {before_count} 条记录。")
         self.load_history()
+        after_count = len(self.entries)
+        logger.info(f"[ChatHistory] 重新加载完成，最新记录条数：{after_count}。")
 
     def add_entry(self, user: str, assistant: str) -> None:
         """

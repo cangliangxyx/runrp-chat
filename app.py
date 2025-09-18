@@ -47,16 +47,6 @@ async def index(request: Request):
     )
 
 # -----------------------------
-# 重新加载聊天历史
-# -----------------------------
-@app.post("/reload_history")
-async def reload_history():
-    """重新从文件加载聊天历史记录"""
-    chat_history.reload()
-    logger.info("[操作] 历史记录已重新加载 (来自 Web)")
-    return JSONResponse({"status": "ok"})
-
-# -----------------------------
 # 聊天接口
 # -----------------------------
 @app.post("/chat")
@@ -120,6 +110,22 @@ async def update_personas(selected: str = Form(...)):
     current_personas = [name for name in names if name in available]
     logger.info(f"[人物更新] 当前出场人物: {current_personas}")
     return JSONResponse({"status": "ok", "current_personas": current_personas})
+
+
+
+# -----------------------------
+# 重新加载聊天历史
+# -----------------------------
+@app.post("/reload_history")
+async def reload_history():
+    """重新从文件加载最新的聊天记录"""
+    try:
+        chat_history.reload()
+        logger.info("[操作] 历史记录已从文件重新加载 (来自 Web)")
+        return JSONResponse({"status": "ok"})
+    except Exception as e:
+        logger.error(f"[reload_history] 重新加载失败: {e}", exc_info=True)
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 # -----------------------------
 # 清空聊天历史
