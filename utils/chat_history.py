@@ -31,6 +31,13 @@ class ChatHistory:
         self.entries: List[Dict[str, Any]] = []
         self.load_history()
 
+    def reload(self) -> None:
+        """
+        重新从文件加载最新的聊天记录。
+        适用于文件被外部修改后需要手动同步内存的情况。
+        """
+        self.load_history()
+
     def add_entry(self, user: str, assistant: str) -> None:
         """
         添加一条对话记录

@@ -1,8 +1,4 @@
-# FROM --platform=linux/amd64 python:3.12-alpine
-
-# Alpine 使用 apk
-# RUN apk update && \
-#    apk add --no-cache libc6-compat
+# Dockerfile
 
 FROM python:3.12-slim
 
@@ -16,10 +12,9 @@ RUN apt-get update && \
 # 创建项目目录并设置为工作目录
 RUN mkdir /opt/project
 WORKDIR /opt/project
-
+#
 # 将本地代码复制到容器
 COPY ./ /opt/project
-
 # 设置环境变量，指定 oc 所在路径
 ENV PATH="/opt/project/bin:${PATH}"
 ENV KUBECONFIG=/opt/project/kube/config

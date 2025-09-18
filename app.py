@@ -47,6 +47,16 @@ async def index(request: Request):
     )
 
 # -----------------------------
+# 重新加载聊天历史
+# -----------------------------
+@app.post("/reload_history")
+async def reload_history():
+    """重新从文件加载聊天历史记录"""
+    chat_history.reload()
+    logger.info("[操作] 历史记录已重新加载 (来自 Web)")
+    return JSONResponse({"status": "ok"})
+
+# -----------------------------
 # 聊天接口
 # -----------------------------
 @app.post("/chat")

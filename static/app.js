@@ -309,3 +309,28 @@ document.addEventListener("DOMContentLoaded", () => {
   loadPersonas();
   refreshCurrentPersonas();
 });
+
+// 重新从文件加载最新的聊天记录
+document.addEventListener("DOMContentLoaded", () => {
+  const btnReloadHistory = document.getElementById("btn-reload-history");
+
+  if (btnReloadHistory) {
+    btnReloadHistory.addEventListener("click", async () => {
+      try {
+        const res = await fetch("/reload_history", { method: "POST" });
+        const data = await res.json();
+        if (data.status === "ok") {
+          alert("已从文件重新加载历史记录！");
+          // 如果有显示历史对话的函数，可以在这里调用刷新UI
+          // refreshConversationList();
+        } else {
+          alert("重新加载失败！");
+        }
+      } catch (err) {
+        console.error("重新加载历史记录失败", err);
+        alert("无法连接服务器！");
+      }
+    });
+  }
+});
+
