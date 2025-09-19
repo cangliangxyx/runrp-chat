@@ -37,7 +37,8 @@ DEFAULT_MODELS = {
         "client_name": "link_api",
     },
     "gemini-2.5-pro": {
-        "label": "gemini-2.5-pro-nothinking",
+        # "label": "gemini-2.5-pro-nothinking",
+        "label": "gemini-2.5-pro",
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
