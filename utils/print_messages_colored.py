@@ -29,7 +29,7 @@ def print_model_output_colored(text, color: str = Fore.BLUE):
     :param color: 默认输出颜色
     """
     # 正则匹配 『...』 和 「...」
-    pattern = r"(『.*?』|「.*?」|“.*?”|\".*?\")"
+    pattern = r"(『.*?』|「.*?」|“.*?”|\".*?\"|“.*?”)"
 
     last_end = 0
     for match in re.finditer(pattern, text):
