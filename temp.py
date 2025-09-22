@@ -6,7 +6,7 @@ from config.config import CLIENT_CONFIGS
 from prompt.get_system_prompt import get_system_prompt
 
 
-model_details = model_registry("google-flash")
+model_details = model_registry("google-pro")
 print("model_details =",model_details)
 client_key = model_details["client_name"]
 print("client_key =",client_key)
