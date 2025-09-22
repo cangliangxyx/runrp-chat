@@ -58,6 +58,7 @@ async def execute_model(
                     logger.error(f"模型接口返回非200状态码: {response.status_code}")
                     return
                 async for line in response.aiter_lines():
+                    print(f"[DEBUG] 原始行: {line}")  # <-- 添加这一行调试
                     if not (line and line.startswith("data: ")):
                         continue
                     data_str = line[len("data: "):].strip()
@@ -120,6 +121,7 @@ async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
     system_instructions = get_system_prompt("lamnq")     # 获取默认配置文件
+    # system_instructions = get_system_prompt("developer")
     logger.info(f"[默认出场人物] {current_personas}")
 
     # 初使剧情，自动填充

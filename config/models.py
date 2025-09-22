@@ -5,6 +5,19 @@ logger = logging.getLogger(__name__)
 
 # 预置模型
 DEFAULT_MODELS = {
+    # deepseek-chat / deepseek-reasoner
+    "google-flash": {
+        "label": "gemini-2.5-flash",
+        "supports_streaming": True,
+        "default_temperature": 0.6,
+        "client_name": "google",
+    },
+    "google-pro": {
+        "label": "gemini-2.5-pro",
+        "supports_streaming": True,
+        "default_temperature": 0.6,
+        "client_name": "google",
+    },
     "claude-api": {
         "label": "claude-sonnet-4-20250514",
         "supports_streaming": True,
@@ -17,12 +30,6 @@ DEFAULT_MODELS = {
         "supports_streaming": True,
         "default_temperature": 0.6,
         "client_name": "deepseek",
-    },
-    "gpt-5-mini": {
-        "label": "gpt-5-mini-2025-08-07",
-        "supports_streaming": True,
-        "default_temperature": 0.4,
-        "client_name": "link_api",
     },
     "gpt-5": {
         "label": "gpt-5",
@@ -61,7 +68,7 @@ def list_model_ids() -> list:
     return list(DEFAULT_MODELS.keys())
 
 if __name__ == "__main__":
-    data = model_registry('grok-4')
+    data = model_registry('google')
     print(data)
 
     print(list_model_ids())

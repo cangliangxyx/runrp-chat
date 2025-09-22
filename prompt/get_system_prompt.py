@@ -32,4 +32,4 @@ def get_system_prompt(name: str) -> str:
     return PROMPT_CACHE[name]
 
 if __name__ == "__main__":
-    print(get_system_prompt("prompt_test"))
+    print(get_system_prompt("lamnq"))
