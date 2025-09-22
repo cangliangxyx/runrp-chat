@@ -150,7 +150,7 @@ async def main_loop():
 
         async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
             # print(text_chunk, end="", flush=True)
-            print_model_output_colored(text_chunk, color=Fore.YELLOW)
+            print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
         logger.info("\n[生成完成] 模型回复已输出完成 ")
 if __name__ == "__main__":
     asyncio.run(main_loop())
