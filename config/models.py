@@ -5,9 +5,38 @@ logger = logging.getLogger(__name__)
 
 # 预置模型
 DEFAULT_MODELS = {
+    "gemini-2.5-pro": {
+        "label": "gemini-2.5-pro",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
     "gemini-2.5-pro-nothinking": {
         "label": "gemini-2.5-pro-nothinking",
-        # "label": "gemini-2.5-flash-nothinking",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
+    "gemini-2.5-flash": {
+        "label": "gemini-2.5-flash",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
+    "grok-4": {
+        "label": "grok-4",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
+    "gpt-5": {
+        "label": "gpt-5",
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
+    "claude-sonnet-4": {
+        "label": "claude-sonnet-4-20250514",
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
@@ -25,31 +54,6 @@ DEFAULT_MODELS = {
         "default_temperature": 0.6,
         "client_name": "deepseek",
     },
-    "gpt-5": {
-        "label": "gpt-5",
-        "supports_streaming": True,
-        "default_temperature": 0.4,
-        "client_name": "link_api",
-    },
-    "grok-4": {
-        "label": "grok-4",
-        "supports_streaming": True,
-        "default_temperature": 0.4,
-        "client_name": "link_api",
-    },
-    "gemini-2.5-pro": {
-        # "label": "gemini-2.5-pro-nothinking",
-        "label": "gemini-2.5-pro",
-        "supports_streaming": True,
-        "default_temperature": 0.4,
-        "client_name": "link_api",
-    },
-    "claude-sonnet-4": {
-        "label": "claude-sonnet-4-20250514",
-        "supports_streaming": True,
-        "default_temperature": 0.4,
-        "client_name": "link_api",
-    }
 }
 
 def model_registry(model_name: str = None):
