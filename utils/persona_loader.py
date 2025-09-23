@@ -49,10 +49,10 @@ def get_default_personas() -> List[str]:
     默认包含玩家主角 {user} 和指定 NPC
     """
     available = list_personas()
-    print("available = ", available)
+    # print("available = ", available)
     personas = []
     if DEFAULT_USER_NAME in available:
-        print("DEFAULT_USER_NAME = ", DEFAULT_USER_NAME)
+        # print("DEFAULT_USER_NAME = ", DEFAULT_USER_NAME)
         personas.append(DEFAULT_USER_NAME)
     else:
         logger.warning(f"persona.json 中没有找到 {DEFAULT_USER_NAME}，请补充！")
