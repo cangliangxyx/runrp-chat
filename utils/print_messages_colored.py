@@ -44,6 +44,6 @@ def print_model_output_colored(text, color: str = Fore.WHITE):
 
         last_end = end
 
-    # 打印剩余的普通文本  我看着静静，她害羞的走过来说我帮老公，就这样她赤裸的穿着围圈背对我在做早餐我闻着她的体香，慢慢的插入她的骚逼里，糯糯起来后看见我在厨房干着张静赤裸着主动走过来在后面抱着我用大乳房帮我助兴
+    # 打印剩余的普通文本
     if last_end < len(text):
         print(f"{color}{text[last_end:]}{Style.RESET_ALL}", end="", flush=True)

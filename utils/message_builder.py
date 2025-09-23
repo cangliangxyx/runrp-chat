@@ -17,7 +17,7 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
                 persona_info += f"{name}: {', '.join(info_lines)}\n"
         except KeyError:
             continue
-    messages.append({"role": "system", "content": f"出场人物信息:\n{persona_info}"})
+    messages.append({"role": "system", "content": f"人物信息(不需要在正文输出):\n{persona_info}"})
 
 
 def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10,optional_message: str = None ):

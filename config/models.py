@@ -5,18 +5,12 @@ logger = logging.getLogger(__name__)
 
 # 预置模型
 DEFAULT_MODELS = {
-    # deepseek-chat / deepseek-reasoner
-    "google-flash": {
-        "label": "gemini-2.5-flash",
+    "gemini-2.5-pro-nothinking": {
+        "label": "gemini-2.5-pro-nothinking",
+        # "label": "gemini-2.5-flash-nothinking",
         "supports_streaming": True,
-        "default_temperature": 0.6,
-        "client_name": "google",
-    },
-    "google-pro": {
-        "label": "gemini-2.5-pro",
-        "supports_streaming": True,
-        "default_temperature": 0.6,
-        "client_name": "google",
+        "default_temperature": 0.4,
+        "client_name": "link_api",
     },
     "claude-api": {
         "label": "claude-sonnet-4-20250514",
