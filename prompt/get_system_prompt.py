@@ -4,10 +4,10 @@ from pathlib import Path
 
 PROMPT_FILES = {
     "developer":"system_prompt_developer.md",
-    "lamnq": "system_prompt_01.md",
-    "nsxt": "system_prompt_03.md",
+    "真实现实恋爱模拟器": "system_prompt_01.md",
+    "女神反转系统": "system_prompt_03.md",
+    "安清雪": "system_prompt_02.md",
     "default": "system_prompt_def.md",
-    "prompt02": "system_prompt_02.md",
     "test": "system_prompt_test.md",
     "nsfw": "system_prompt_nsfw.md",
     "temp": "temp.md",
