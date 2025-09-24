@@ -120,7 +120,7 @@ async def select_model() -> str:
 async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
-    system_instructions = get_system_prompt("test")     # 获取默认配置文件
+    system_instructions = get_system_prompt("安清雪")     # 获取默认配置文件
     # system_instructions = get_system_prompt("developer")
     logger.info(f"[默认出场人物] {current_personas}")
 

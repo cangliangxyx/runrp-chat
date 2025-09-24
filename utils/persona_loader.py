@@ -15,8 +15,8 @@ PERSONA_FILE = Path(__file__).parent.parent / "config" / "persona.json"
 
 # 主角名字
 DEFAULT_USER_NAME = "常亮"
-# 默认出场 NPC（除玩家） 餐后我抱着小小在客厅看电视，她坐在我腿上我习惯性的用手抚摸她的乳房，小小看了我一眼默许了我的动作，直到她开始呻吟
-DEFAULT_NPC_NAMES = ['苏小小']
+# 默认出场 NPC（除玩家）
+DEFAULT_NPC_NAMES = []
 
 
 def load_personas() -> Dict[str, Dict[str, Any]]:
