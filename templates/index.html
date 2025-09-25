@@ -13,32 +13,36 @@
   <div class="app with-sidebar">
     <!-- 左侧边栏 -->
     <aside class="sidebar" id="sidebar">
+      <!-- 历史对话 -->
       <div class="sidebar-header">
         <div class="sidebar-title">历史对话</div>
         <button class="sidebar-new" id="btn-new">新对话</button>
       </div>
-
+      <!-- 会话列表 -->
       <nav class="sidebar-list" id="conv-list" aria-label="会话列表">
         <!-- 会话项由脚本注入 -->
       </nav>
 
       <div class="sidebar-footer">
-          <!-- 新增 web_input 输入框 -->
+        <!-- 新增 web_input 输入框 -->
         <div class="web-input-container">
           <label for="web_input">Web Input</label>
-          <textarea id="web_input" name="web_input" rows="2">输出文字不少于3000字，注意输出格式正文+摘要，未经指令禁止射精、高潮、切换场景或结束剧情</textarea>
+          <textarea id="web_input" name="web_input" rows="2">禁止自行射精、高潮、切换场景或结束当前剧情</textarea>
         </div>
+
         <!-- 出场人物选择 -->
         <div class="personas-selection">
           <label>出场人物：</label>
           <div id="persona-list"></div>
           <button id="btn-update-personas">更新出场人物</button>
         </div>
+
         <!-- NSFW 开关 -->
         <div class="nsfw-toggle">
           <label for="nsfw-checkbox">nsfw</label>
           <input type="checkbox" id="nsfw-checkbox" name="nsfw" checked>
         </div>
+
         <!-- 实时显示当前出场人物 -->
         <div class="current-personas">
           <strong>当前出场人物:</strong>
@@ -46,6 +50,7 @@
         </div>
 
         <button class="sidebar-clear" id="btn-clear-all" title="清空全部历史">清</button>
+
         <small class="muted">本地保存 · 自动持久化</small>
       </div>
     </aside>
@@ -54,22 +59,22 @@
     <div class="content">
       <header class="topbar">
         <button class="menu-btn" id="btn-toggle" aria-label="切换侧栏">☰</button>
-        <div class="brand">cc</div>
+        <div class="brand">rc</div>
         <div class="controls">
+          <!-- 模型下拉框 动态注入 option -->
           <label class="model-label" for="model">模型</label>
           <select id="model" name="model" class="model-select">
             {% for m in models %}
               <option value="{{ m }}">{{ m }}</option>
             {% endfor %}
           </select>
-
+          <!-- 规则下拉框 动态注入 option -->
           <label class="model-label" for="system_rules">规则</label>
             <select id="system_rules" name="system_rules" class="model-select">
-              <!-- 动态注入 option -->
             </select>
-            <!-- 新增：清空历史按钮 -->
-          <button id="btn-clear-history" class="clear-history-btn" title="清空当前历史">清</button>
-            <!-- 新增：读取历史按钮 -->
+          <!-- 新增：清空历史按钮 -->
+          <button id="btn-clear-history" class="reload-history-btn" title="清空当前历史">清</button>
+          <!-- 新增：读取历史按钮 clear-history-btn-->
           <button id="btn-reload-history" class="reload-history-btn" title="重新读取历史">读</button>
         </div>
       </header>
