@@ -375,8 +375,27 @@ html, body {
    响应式适配 手机
    ========================= */
 @media (max-width: 600px) {
+
+  /* 隐藏左侧栏 */
   .app.with-sidebar {
-    grid-template-columns: 0 1fr; /* 隐藏左侧栏 */
+    grid-template-columns: 0 1fr;
+  }
+  /* 下拉菜单按钮 */
+  .menu-btn {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+  /* 头部整体更紧凑 */
+  .topbar {
+    padding: 6px 8px; /* 减少上下左右内边距 */
+    gap: 2px; /* 缩小元素间距 */
+  }
+  /* 模型选择和规则选择缩窄 */
+  .model-select {
+    width: 80px;        /* ✅ 改成固定宽度 */
+    max-width: 30vw;    /* ✅ 限制最大宽度占屏幕百分比 */
+    font-size: 12px;
+    padding: 4px 6px;
   }
 
   .sidebar {
@@ -391,6 +410,17 @@ html, body {
   .sidebar.open {
     transform: translateX(0%);
     box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+  }
+
+  .chat-container {
+    max-width: 100%;
+    padding: 12px 8px 100px; /* 减少左右 padding 让气泡更宽 */
+  }
+
+  .msg .bubble {
+    max-width: 95%; /* 让聊天气泡尽量占满屏幕 */
+    font-size: 16px; /* 字体略小，适配手机 */
+    line-height: 1.6;
   }
 }
 /* =========================
