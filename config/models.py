@@ -6,37 +6,43 @@ logger = logging.getLogger(__name__)
 # 预置模型
 DEFAULT_MODELS = {
     "gemini-2.5-pro": {
-        "label": "gemini-2.5-pro",
+        "label": "gemini-2.5-pro",          # $0.00125/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
     "gemini-2.5-pro-nothinking": {
-        "label": "gemini-2.5-pro-nothinking",
+        "label": "gemini-2.5-pro-nothinking",   # $0.00125/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
     "gemini-2.5-flash": {
-        "label": "gemini-2.5-flash",
+        "label": "gemini-2.5-flash",        # $0.0003/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
     "grok-4": {
-        "label": "grok-4",
+        "label": "grok-4",                  # $0.02/次（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    "gpt-5": {
-        "label": "gpt-5",
+    "gpt-5-chat-latest": {
+        "label": "gpt-5-chat-latest",               # $0.001/K tokens（vip）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
+    },
+    "claude-3-7": {
+        "label": "claude-3-7-sonnet-20250219",      # $0.0024/K tokens（cc）
+        "supports_streaming": True,
+        "default_temperature": 0.6,
+        "client_name": "runrp_claude_cc",
     },
     "claude-sonnet-4": {
-        "label": "claude-sonnet-4-20250514",
+        "label": "claude-sonnet-4-20250514",      # $0.0024/K tokens（cc）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",

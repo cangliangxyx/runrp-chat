@@ -20,5 +20,10 @@ CLIENT_CONFIGS = {
         # "base_url": "https://api.246520.xyz/v1beta/chat/completions",
         "base_url": "https://generativelanguage.googleapis.com/v1beta/chat/completions",
         "api_key": decrypt_message("gAAAAABo0QSlhm1yMzos3vV5j0vlSYkc5isv9L6C-z-lGVoaiK33s5-ajcAs3L0TUVaHc2trYzVuCgWrvwuvCuAM_ONG5BlIqeA8hH6joBF_YyhUz9dzd4fIqxFjMxs0LNWZzdoQu6aB")
+    },
+    # chat_runrp
+    "runrp_claude_cc": {
+        "base_url": "https://api.linkapi.org/v1/chat/completions",
+        "api_key": decrypt_message("gAAAAABo1fYbMfy_q-hpmcsMydhrpgwJbeW63XV1qRhv-WWFFZ_re0p9P-nVG7Jyfpbkpu-Eg1nQiQlh00IxUII4z5Fx1YzyYD0zxcyH_SlAUoQaO0WpLRJAJEFAxduaymEztSJUJli7hVsZRYWGC4rFcYbJiDgEFA==")
     }
 }

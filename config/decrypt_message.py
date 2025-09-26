@@ -27,7 +27,7 @@ def decrypt_message(encrypted_message):
 
 if __name__ == "__main__":
     # SECRET_KEY 已设置在环境变量中
-    plaintext = "sk-YBnNIMqAlZex02fSNjijK6qyqVsI8hzCogIab8ED3IW3REHZ"
+    plaintext = "sk-q8bJihUYp6rNfmJV1OzUmItDlCqstrhVa1FnLe70LvdI1iUt"
 
     # 加密
     encrypted = encrypt_message(plaintext)
