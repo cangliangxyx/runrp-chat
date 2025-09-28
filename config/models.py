@@ -18,13 +18,13 @@ DEFAULT_MODELS = {
         "client_name": "link_api",
     },
     "gemini-2.5-flash": {
-        "label": "gemini-2.5-flash",        # $0.0003/K tokens（default）
+        "label": "gemini-2.5-flash-lite",        # $0.0003/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
     "grok-4": {
-        "label": "grok-4",                  # $0.02/次（default）
+        "label": "grok-4-fast-non-reasoning",                  # $0.02/次（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
