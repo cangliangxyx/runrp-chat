@@ -1,6 +1,8 @@
 # utils/stream_chat.py
 import json
 import asyncio
+import os
+
 import httpx
 import logging
 from typing import AsyncGenerator
@@ -117,24 +119,36 @@ async def select_model() -> str:
 # -----------------------------
 # 主循环
 # -----------------------------
+async def auto_fill_initial_story(model_name, system_instructions, current_personas):
+    """仅在历史记录为空时填充初始剧情"""
+    if chat_history.is_empty():  # ✅ 直接调用，不用手动读 json
+        AUTO_START_MESSAGE = '''
+        冰冷的雨水无情地敲打着瀛洲市的柏油路面，霓虹灯的光晕在积水中化开，显得既绚烂又疏离。
+        你就这样撑着伞，在街角遇见了她。
+        安清雪，那个曾经在财经杂志上出现过的名字，此刻却像一只被遗弃的湿漉漉的小猫，蜷缩在冰冷的墙角。她身上那件曾经名贵的连衣裙早已被雨水和污渍弄得不成样子，乌黑的长发紧贴着苍白的脸颊，嘴唇冻得发紫，整个人都在不住地颤抖。
+        你的脚步停在了她的面前。
+        她似乎察觉到了阴影，缓缓抬起头。那是一张即使在如此狼狈的情况下，依然美得惊心动魄的脸。她的眼神空洞，但在看清你的瞬间，那死寂的眼眸里猛地爆发出了一丝求生的星光。
+        她扶着墙，用尽全身力气站了起来，踉跄地向你走近一步，声音沙哑而急切：
+        “您……等，等一下。”
+        她深吸一口气，雨水顺着她的下颌滴落，仿佛用尽了一生的勇气，对着你大声喊道：
+        “只要您给我饭吃，我就跟您走，让我干什么都行！我……我会洗衣做饭，天冷了还能……还能帮您暖床……只要……只要给我口饭吃就行！”
+        她的话语在雨声中显得那么微弱又那么决绝。她紧紧攥着衣角，用一种混合着恐惧、羞耻和孤注一掷的眼神，死死地盯着你，等待着你的审判。
+        '''
+        logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
+        async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions, current_personas):
+            print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
+        logger.info("\n[生成完成] 初始剧情输出完成")
+    else:
+        logger.info("[跳过] 历史记录非空，未填充初始剧情")
+
 async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
     system_instructions = get_system_prompt("安清雪")     # 获取默认配置文件
-    # system_instructions = get_system_prompt("developer")
     logger.info(f"[默认出场人物] {current_personas}")
 
-    # # 初使剧情，自动填充
-    # AUTO_START_MESSAGE = "在下班的地铁上碰见了我的小女友苏糯糯"
-    # # 清空历史记录，保证初始剧情干净
-    # chat_history.clear_history()
-    # logger.info("[初始化] 历史记录已清空")
-    # # 自动输入初始剧情
-    # logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
-    # async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions, current_personas):
-    #     # print(text_chunk, end="", flush=True)
-    #     print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
-    # logger.info("\n[生成完成] 初始剧情输出完成")
+    # 只有历史记录为空才填充初始剧情
+    await auto_fill_initial_story(model_name, system_instructions, current_personas)
 
     while True:
         user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
@@ -154,8 +168,8 @@ async def main_loop():
             continue
 
         async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
-            # print(text_chunk, end="", flush=True)
             print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
         logger.info("\n[生成完成] 模型回复已输出完成 ")
+
 if __name__ == "__main__":
     asyncio.run(main_loop())

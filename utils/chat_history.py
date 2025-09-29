@@ -98,8 +98,6 @@ class ChatHistory:
             str: 提取的故事摘要，如果没有找到则返回 None
         """
         # 匹配 ##时间戳## 到文本结尾的部分（包含时间戳本身）
-        # pattern = r'##\d{4}-\d{2}-\d{2} \d{2}:\d{2}##.*'
-        # pattern = r'##\s*\d{4}-\d{2}-\d{2} \d{2}:\d{2}\s*##.*'
         pattern = r'##\s*摘要-\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*##.*'
         match = re.search(pattern, assistant_text, re.DOTALL)
         if match:
@@ -134,3 +132,11 @@ class ChatHistory:
                 self.HISTORY_FILE.unlink()
             except Exception as e:
                 print(f"[警告] 删除历史文件失败: {e}")
+
+    def is_empty(self) -> bool:
+        """
+        判断历史记录是否为空
+        Returns:
+            bool: True 表示没有任何历史记录
+        """
+        return len(self.entries) == 0
