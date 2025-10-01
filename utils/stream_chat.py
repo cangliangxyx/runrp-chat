@@ -1,7 +1,7 @@
-# utils/stream_chat.py
+# prompt/stream_chat.py
+
 import json
 import asyncio
-import os
 
 import httpx
 import logging
@@ -29,8 +29,38 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # 全局变量
 # -----------------------------
 chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
-MAX_HISTORY_ENTRIES = 1                     # 最近 10 条对话传给模型
+MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
 SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+
+
+# -----------------------------
+# 统一的流解析函数
+# -----------------------------
+def parse_stream_chunk(data_str: str) -> str | None:
+    """
+    兼容 OpenAI / Gemini 流式返回，解析内容片段
+    """
+    try:
+        chunk = json.loads(data_str)
+
+        # ✅ OpenAI 风格
+        if "choices" in chunk:
+            delta = chunk["choices"][0].get("delta", {})
+            return delta.get("content")
+
+        # ✅ Gemini 风格
+        elif "candidates" in chunk:
+            parts = chunk["candidates"][0].get("content", {}).get("parts", [])
+            return "".join(p.get("text", "") for p in parts if "text" in p)
+
+        else:
+            logger.debug(f"[未知结构] {chunk}")
+            return None
+
+    except json.JSONDecodeError:
+        logger.warning(f"无效 JSON: {data_str}")
+        return None
+
 
 # -----------------------------
 # 调用模型并流式返回
@@ -59,26 +89,22 @@ async def execute_model(
                 if response.status_code != 200:
                     logger.error(f"模型接口返回非200状态码: {response.status_code}")
                     return
+
                 async for line in response.aiter_lines():
-                    # print(f"[DEBUG] 原始行: {line}")  # <-- 添加调试
                     if not (line and line.startswith("data: ")):
                         continue
                     data_str = line[len("data: "):].strip()
-                    if data_str in ("[DONE]", ""):
-                        continue
-                    try:
-                        chunk = json.loads(data_str)
-                        choices = chunk.get("choices")
-                        if not choices or len(choices) == 0:  # 避免 IndexError
-                            continue
-                        delta = choices[0].get("delta", {})
-                        delta_content = delta.get("content")
-                        if delta_content:
-                            full_response_text += delta_content
-                            yield delta_content
-                    except json.JSONDecodeError:
-                        logger.warning(f"无效 JSON: {data_str}")
-                        continue
+
+                    # ✅ 处理结束符
+                    if data_str.strip() in ("[DONE]", ""):
+                        break
+
+                    # ✅ 调用统一解析器
+                    delta_content = parse_stream_chunk(data_str)
+                    if delta_content:
+                        full_response_text += delta_content
+                        yield delta_content
+
     except httpx.RequestError as e:
         logger.error(f"请求模型接口异常: {e}")
 
@@ -116,12 +142,13 @@ async def select_model() -> str:
         except ValueError:
             print("请输入数字。")
 
+
 # -----------------------------
 # 主循环
 # -----------------------------
 async def auto_fill_initial_story(model_name, system_instructions, current_personas):
     """仅在历史记录为空时填充初始剧情"""
-    if chat_history.is_empty():  # ✅ 直接调用，不用手动读 json
+    if chat_history.is_empty():
         AUTO_START_MESSAGE = '''
         冰冷的雨水无情地敲打着瀛洲市的柏油路面，霓虹灯的光晕在积水中化开，显得既绚烂又疏离。
         你就这样撑着伞，在街角遇见了她。
@@ -140,6 +167,7 @@ async def auto_fill_initial_story(model_name, system_instructions, current_perso
         logger.info("\n[生成完成] 初始剧情输出完成")
     else:
         logger.info("[跳过] 历史记录非空，未填充初始剧情")
+
 
 async def main_loop():
     current_personas = get_default_personas()           # 人物加载
@@ -170,6 +198,7 @@ async def main_loop():
         async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
             print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
         logger.info("\n[生成完成] 模型回复已输出完成 ")
+
 
 if __name__ == "__main__":
     asyncio.run(main_loop())

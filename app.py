@@ -1,5 +1,5 @@
 # app.py
-import logging
+import logging, json
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -79,9 +79,11 @@ async def chat(
                 web_input=web_input,
                 nsfw=nsfw_enabled,
             ):
-                yield chunk
+                # ✅ 转成 JSON 行（NDJSON）
+                yield json.dumps(chunk, ensure_ascii=False) + "\n"
 
-        return StreamingResponse(event_stream(), media_type="text/plain; charset=utf-8")
+        # ✅ 修改 media_type，前端方便解析
+        return StreamingResponse(event_stream(), media_type="application/json")
 
     except Exception as e:
         logger.error(f"[chat] 流式响应出错: {e}", exc_info=True)

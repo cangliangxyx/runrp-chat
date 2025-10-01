@@ -1,5 +1,4 @@
 /*** static/app.js ***/
-
 document.addEventListener("DOMContentLoaded", () => {
   /*** -------------------- 人物管理 -------------------- ***/
   async function loadPersonas() {
@@ -250,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
 
-  // -------------------- 表单提交 --------------------
+  /*** -------------------- 表单提交 -------------------- ***/
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const model = modelSel.value;
@@ -258,9 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const prompt = promptEl.value.trim();
     if (!prompt) return;
 
-    // ✅ 实时读取 NSFW 开关状态
     const nsfw = document.getElementById("nsfw-checkbox").checked ? "true" : "false";
-    // console.log("[前端] 当前 nsfw 开关状态:", nsfw);  // 👈 添加这一行
 
     appendMessage("user", prompt);
     promptEl.value = "";
@@ -284,15 +281,39 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!resp.ok || !resp.body) throw new Error(`${resp.status} ${resp.statusText}`);
       const reader = resp.body.getReader();
       const decoder = new TextDecoder("utf-8");
+      let buffer = "";
       let acc = "";
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        assistantNode.bubble.textContent = acc;
-        const last = conv?.messages[conv.messages.length - 1];
-        if (last && last.role === "assistant") { last.content = acc; conv.updatedAt = Date.now(); save(); }
-        scrollToBottom();
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || "";
+
+        for (let line of lines) {
+          line = line.trim();
+          if (!line || line === "[DONE]") continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.type === "chunk" && data.content) {
+              acc += data.content;
+              assistantNode.bubble.textContent = acc;
+              const last = conv?.messages[conv.messages.length - 1];
+              if (last && last.role === "assistant") { last.content = acc; conv.updatedAt = Date.now(); save(); }
+              scrollToBottom();
+            } else if (data.type === "end") {
+              console.log("完整输出:", data.full);
+            } else if (data.type === "error") {
+              assistantNode.bubble.textContent = `[错误] ${data.error}`;
+            }
+          } catch (err) {
+            console.warn("解析 JSON 失败，跳过该行:", line);
+            continue;
+          }
+        }
       }
     } catch (err) {
       assistantNode.bubble.textContent = `请求失败: ${err.message}`;
@@ -308,12 +329,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadPersonas();
   refreshCurrentPersonas();
-});
 
-// 重新从文件加载最新的聊天记录
-document.addEventListener("DOMContentLoaded", () => {
+  /*** -------------------- 重新加载历史 -------------------- ***/
   const btnReloadHistory = document.getElementById("btn-reload-history");
-
   if (btnReloadHistory) {
     btnReloadHistory.addEventListener("click", async () => {
       try {
@@ -321,11 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
         if (data.status === "ok") {
           alert("已从文件重新加载历史记录！");
-          // 如果有显示历史对话的函数，可以在这里调用刷新UI
-          // refreshConversationList();
-        } else {
-          alert("重新加载失败！");
-        }
+        } else alert("重新加载失败！");
       } catch (err) {
         console.error("重新加载历史记录失败", err);
         alert("无法连接服务器！");
@@ -333,4 +347,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-

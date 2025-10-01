@@ -11,8 +11,8 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    "gemini-2.5-pro-nothinking": {
-        "label": "gemini-2.5-pro-nothinking",   # $0.00125/K tokens（default）
+    "gemini-2.5-flash-lite": {
+        "label": "gemini-2.5-flash-lite",   # $0.00125/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",

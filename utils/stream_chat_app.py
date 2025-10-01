@@ -1,4 +1,4 @@
-# utils/stream_chat_app.py
+# prompt/stream_chat_app.py
 
 import json
 import logging
@@ -27,11 +27,42 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # 全局变量
 # -----------------------------
 chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
-MAX_HISTORY_ENTRIES = 1                   # 最近 10 条对话传给模型
-SAVE_STORY_SUMMARY_ONLY = True             # 只保存摘要，避免文件太大
+MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
+SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+DEBUG_STREAM = False                        # 是否打印原始流，调试用
+
 
 # -----------------------------
-# 流式调用模型
+# 统一的流解析函数
+# -----------------------------
+def parse_stream_chunk(data_str: str) -> str | None:
+    """
+    兼容 OpenAI / Gemini 流式返回，解析内容片段
+    """
+    try:
+        chunk = json.loads(data_str)
+
+        # ✅ OpenAI 风格
+        if "choices" in chunk:
+            delta = chunk["choices"][0].get("delta", {})
+            return delta.get("content")
+
+        # ✅ Gemini 风格
+        elif "candidates" in chunk:
+            parts = chunk["candidates"][0].get("content", {}).get("parts", [])
+            return "".join(p.get("text", "") for p in parts if "text" in p)
+
+        # 其他未知结构
+        logger.debug(f"[未知结构] {chunk}")
+        return None
+
+    except json.JSONDecodeError:
+        logger.warning(f"无效 JSON: {data_str}")
+        return None
+
+
+# -----------------------------
+# 流式调用模型（结构化输出 + 异常处理细分）
 # -----------------------------
 async def execute_model_for_app(
     model_name: str,
@@ -40,12 +71,27 @@ async def execute_model_for_app(
     personas: list[str],
     web_input: str = "",
     nsfw: bool = True,
-) -> AsyncGenerator[str, None]:
+) -> AsyncGenerator[dict, None]:
+    """
+    调用模型并流式返回
+    每次 yield 一个 dict，包含：
+    { "type": "chunk", "content": "文本片段" }
+    { "type": "end", "full": "完整回复" }
+    { "type": "error", "error": "错误描述" }
+    """
 
-    print("nsfw = ", nsfw)
+    logger.info(f"[执行模型] nsfw={nsfw}")
+
     # 构建 messages
-    messages = build_messages(system_instructions, personas, chat_history, user_input, web_input, nsfw=nsfw, max_history_entries=MAX_HISTORY_ENTRIES)
-
+    messages = build_messages(
+        system_instructions,
+        personas,
+        chat_history,
+        user_input,
+        web_input,
+        nsfw=nsfw,
+        max_history_entries=MAX_HISTORY_ENTRIES,
+    )
     print_messages_colored(messages)
 
     # 模型配置
@@ -54,37 +100,58 @@ async def execute_model_for_app(
     payload = {"model": model_details["label"], "stream": True, "messages": messages}
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {client_settings['api_key']}"}
 
-    full_response_text = ""
+    chunks = []
+
     try:
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream("POST", client_settings["base_url"], headers=headers, json=payload) as response:
                 if response.status_code != 200:
-                    logger.error(f"模型接口返回非200状态码: {response.status_code}")
+                    error_msg = f"模型接口返回非200状态码: {response.status_code}"
+                    logger.error(error_msg)
+                    yield {"type": "error", "error": error_msg}
                     return
 
                 async for line in response.aiter_lines():
-                    if not line.startswith("data: "):
+                    if not (line and line.startswith("data: ")):
                         continue
                     data_str = line[6:].strip()
-                    if data_str in ("", "[DONE]"):
-                        continue
-                    try:
-                        chunk = json.loads(data_str)
-                        choices = chunk.get("choices")
-                        if choices and len(choices) > 0:
-                            delta = choices[0].get("delta", {})
-                            delta_content = delta.get("content")
-                            if delta_content:
-                                full_response_text += delta_content
-                                yield delta_content
-                    except json.JSONDecodeError:
-                        logger.warning(f"无效 JSON: {data_str}")
-                        continue
+
+                    if DEBUG_STREAM:
+                        print(f"[DEBUG] 原始流: {data_str}")
+
+                    # ✅ 结束标记
+                    if data_str.strip() in ("[DONE]", ""):
+                        break
+
+                    # ✅ 调用统一解析器
+                    delta_content = parse_stream_chunk(data_str)
+                    if delta_content:
+                        chunks.append(delta_content)
+                        yield {"type": "chunk", "content": delta_content}
+
+    except httpx.TimeoutException:
+        error_msg = "[网络超时] 模型接口未响应"
+        logger.error(error_msg)
+        yield {"type": "error", "error": error_msg}
+        return
+    except httpx.ConnectError:
+        error_msg = "[连接失败] 无法连接到模型接口"
+        logger.error(error_msg)
+        yield {"type": "error", "error": error_msg}
+        return
     except httpx.RequestError as e:
-        logger.error(f"[网络错误] 请求模型接口异常: {e}")
+        error_msg = f"[请求错误] {e}"
+        logger.error(error_msg)
+        yield {"type": "error", "error": error_msg}
+        return
+    except Exception as e:
+        error_msg = f"[未知错误] {e}"
+        logger.exception(error_msg)
+        yield {"type": "error", "error": error_msg}
         return
 
     # 保存历史
+    full_response_text = "".join(chunks)
     if full_response_text.strip():
         if SAVE_STORY_SUMMARY_ONLY:
             summary = chat_history._extract_summary_from_assistant(full_response_text)
@@ -93,3 +160,6 @@ async def execute_model_for_app(
         else:
             chat_history.add_entry(user_input, full_response_text)
         chat_history.save_history()
+
+    # ✅ 输出最终完整内容
+    yield {"type": "end", "full": full_response_text}
