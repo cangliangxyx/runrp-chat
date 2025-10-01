@@ -399,6 +399,21 @@ html, body {
 .title-input::placeholder { color: var(--muted); }
 
 /* =========================
+   底部按钮样式
+   ========================= */
+  /* 统一设置 continue-btn 按钮为灰色 */
+  .continue-btn {
+    background-color: #6c757d; /* 灰色背景 */
+    color: white;               /* 白色文字 */
+    border-color: #6c757d;      /* 边框颜色 */
+  }
+
+  /* 鼠标悬停效果 */
+  .continue-btn:hover {
+    background-color: #5a6268;
+    border-color: #5a6268;
+  }
+/* =========================
    响应式适配 手机
    ========================= */
 @media (max-width: 600px) {

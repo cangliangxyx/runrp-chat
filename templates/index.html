@@ -6,8 +6,8 @@
   <meta charset="utf-8">
   <title>runrp-chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/static/app.css?v=1.0.3" />
-  <script src="/static/app.js?v=1.0.3" defer></script>
+  <link rel="stylesheet" href="/static/app.css?v=1.0.4" />
+  <script src="/static/app.js?v=1.0.4" defer></script>
 </head>
 <body>
   <div class="app with-sidebar">
@@ -27,7 +27,7 @@
         <!-- 新增 web_input 输入框 -->
         <div class="web-input-container">
           <label for="web_input">Web Input</label>
-          <textarea id="web_input" name="web_input" rows="2">禁止自行射精、高潮、切换场景或结束当前剧情，禁止使用隐喻，追求直白、大胆、富有冲击力且能激发读者生理反应的描写</textarea>
+          <textarea id="web_input" name="web_input" rows="2"></textarea>
         </div>
 
         <!-- 出场人物选择 -->
@@ -86,20 +86,49 @@
           <pre id="response" style="display:none;"></pre>
         </div>
       </main>
+        <!-- 底部输入栏 -->
+        <footer class="bottombar">
+          <form id="chat-form" class="chat-form">
+            <textarea
+              name="prompt"
+              id="prompt"
+              rows="1"
+              placeholder="给我一个问题或指令，按回车发送，Shift+Enter 换行"
+            ></textarea>
+            <button type="submit" class="send-btn">发送</button>
+          </form>
+          <!-- 两个直接发送按钮 -->
+          <button id="continue-btn" class="continue-btn">
+            继续故事
+          </button>
+          <button id="continue-love-btn" class="continue-btn">
+            暧昧情节
+          </button>
+          <button id="continue-desire-btn" class="continue-btn">
+            欲望情节
+          </button>
+        </footer>
 
-      <!-- 底部输入栏 -->
-      <footer class="bottombar">
-        <form id="chat-form" class="chat-form">
-          <textarea
-            name="prompt"
-            id="prompt"
-            rows="1"
-            placeholder="给我一个问题或指令，按回车发送，Shift+Enter 换行"
-          ></textarea>
-          <button type="submit" class="send-btn">发送</button>
-        </form>
-        <div class="hint">AI 可能会产生不准确的内容，请自行判断。</div>
-      </footer>
+        <script>
+          // 获取表单元素
+          const chatForm = document.getElementById('chat-form');
+          const promptBox = document.getElementById('prompt');
+          // 按历史内容继续故事
+          document.getElementById('continue-btn').addEventListener('click', function() {
+            promptBox.value = "参考历史内容继续故事";
+            chatForm.requestSubmit(); // 直接提交表单
+          });
+          // 按历史内容续写暧昧情节
+          document.getElementById('continue-love-btn').addEventListener('click', function() {
+            promptBox.value = "参考历史内容续写暧昧情节";
+            chatForm.requestSubmit(); // 直接提交表单
+          });
+          // 按历史内容续写欲望情节
+          document.getElementById('continue-desire-btn').addEventListener('click', function() {
+            promptBox.value = "参考历史内容续写欲望情节";
+            chatForm.requestSubmit(); // 直接提交表单
+          });
+        </script>
     </div>
   </div>
 </body>

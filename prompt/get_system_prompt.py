@@ -1,4 +1,4 @@
-# prompt/get_system_prompt.py
+# prompt/get_system_prompt.py   在公司看到一个新来的实习生，王佩佩，她大概21岁，皮肤白皙滑润，长相特别漂亮，黑长直的头发到臀部，身材也很棒乳房特别丰满，腰特别细，屁股很翘看着就想打一巴掌，据说她的业余爱好是瑜伽，看起来是个女神级别，如果和她上床姿势一定很多
 
 from pathlib import Path
 
