@@ -6,25 +6,19 @@ logger = logging.getLogger(__name__)
 # 预置模型
 DEFAULT_MODELS = {
     "gemini-2.5-pro": {
-        "label": "gemini-2.5-pro",          # $0.00125/K tokens（default）
-        "supports_streaming": True,
-        "default_temperature": 0.4,
-        "client_name": "link_api",
-    },
-    "gemini-2.5-flash-lite": {
-        "label": "gemini-2.5-flash-lite",   # $0.00125/K tokens（default）
+        "label": "gemini-2.5-pro",                  # $0.00125/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
     "gemini-2.5-flash": {
-        "label": "gemini-2.5-flash",        # gemini-2.5-flash-lite $0.0003/K tokens（default）
+        "label": "gemini-2.5-flash",                # $0.0003/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    "grok-4": {
-        "label": "grok-4-fast-non-reasoning",                  # $0.02/次（default）
+    "grok-4-fast-non-reasoning": {
+        "label": "grok-4-fast-non-reasoning",       # $0.02/次（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
@@ -35,23 +29,11 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    "claude-3-7": {
-        "label": "claude-3-7-sonnet-20250219",      # $0.0024/K tokens（cc）
-        "supports_streaming": True,
-        "default_temperature": 0.6,
-        "client_name": "runrp_claude_cc",
-    },
-    "claude-sonnet-4": {
-        "label": "claude-sonnet-4-20250514",      # $0.0024/K tokens（cc）
+    "claude-sonnet-4-5": {
+        "label": "claude-sonnet-4-5-20250929",      # $0.0024/K tokens（cc）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
-    },
-    "claude-api": {
-        "label": "claude-sonnet-4-20250514",
-        "supports_streaming": True,
-        "default_temperature": 0.6,
-        "client_name": "claude_api",
     },
     # deepseek-chat / deepseek-reasoner
     "deepseek-chat": {
