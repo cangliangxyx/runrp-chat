@@ -3,10 +3,10 @@
 FROM python:3.12-slim
 
 # 安装依赖，包括 libc6 兼容库
-RUN apt-get update && \
-    apt-get install -y libc6 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+#RUN apt-get update
+#RUN apt-get install -y libc6
+#RUN apt-get clean
+#RUN rm -rf /var/lib/apt/lists/*
 
 
 # 创建项目目录并设置为工作目录
