@@ -44,7 +44,11 @@ def parse_stream_chunk(data_str: str) -> str | None:
 
         # ✅ OpenAI 风格
         if "choices" in chunk:
-            delta = chunk["choices"][0].get("delta", {})
+            choices = chunk.get("choices", [])
+            if not choices:
+                logger.debug(f"[空 choices] {chunk}")
+                return None
+            delta = choices[0].get("delta", {})
             return delta.get("content")
 
         # ✅ Gemini 风格
