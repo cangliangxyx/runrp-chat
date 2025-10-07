@@ -37,7 +37,7 @@ DEBUG_STREAM = False                        # 是否打印原始流，调试用
 # -----------------------------
 def parse_stream_chunk(data_str: str) -> str | None:
     """
-    兼容 OpenAI / Gemini / 其他流式返回格式，解析内容片段
+    兼容 OpenAI / Gemini / 其他流式返回格式，解析内容片段1
     """
     try:
         chunk = json.loads(data_str)
