@@ -37,23 +37,36 @@ DEBUG_STREAM = False                        # 是否打印原始流，调试用
 # -----------------------------
 def parse_stream_chunk(data_str: str) -> str | None:
     """
-    兼容 OpenAI / Gemini 流式返回，解析内容片段
+    兼容 OpenAI / Gemini / 其他流式返回格式，解析内容片段
     """
     try:
         chunk = json.loads(data_str)
 
         # ✅ OpenAI 风格
         if "choices" in chunk:
-            choices = chunk.get("choices", [])
-            if not choices:
-                logger.debug(f"[空 choices] {chunk}")
+            choices = chunk.get("choices")
+            # 防御性判断：必须是非空列表
+            if not isinstance(choices, list) or len(choices) == 0:
+                logger.debug(f"[空或非法 choices] {chunk}")
                 return None
-            delta = choices[0].get("delta", {})
+
+            choice = choices[0]
+            # 有些 chunk 只包含 finish_reason，不包含 delta
+            if "delta" not in choice:
+                logger.debug(f"[无 delta 字段] {chunk}")
+                return None
+
+            delta = choice.get("delta", {})
             return delta.get("content")
 
         # ✅ Gemini 风格
         elif "candidates" in chunk:
-            parts = chunk["candidates"][0].get("content", {}).get("parts", [])
+            candidates = chunk.get("candidates", [])
+            if not isinstance(candidates, list) or len(candidates) == 0:
+                logger.debug(f"[空 candidates] {chunk}")
+                return None
+
+            parts = candidates[0].get("content", {}).get("parts", [])
             return "".join(p.get("text", "") for p in parts if "text" in p)
 
         # 其他未知结构
@@ -62,6 +75,9 @@ def parse_stream_chunk(data_str: str) -> str | None:
 
     except json.JSONDecodeError:
         logger.warning(f"无效 JSON: {data_str}")
+        return None
+    except Exception as e:
+        logger.warning(f"[parse_stream_chunk 异常] {e} - 原始数据: {data_str}")
         return None
 
 
