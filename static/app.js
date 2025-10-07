@@ -230,9 +230,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnToggle.addEventListener("click", () => sidebar.classList.contains("open") ? closeSidebar() : openSidebar());
   btnNew.addEventListener("click", () => { newConversation(); openSidebar(); });
-  btnClearAll.addEventListener("click", () => {
-    if (confirm("确认清空所有历史会话吗？")) { conversations = []; activeId = ""; save(); renderConvList(); renderMessages(); newConversation(); }
-  });
+
+
+/*** 删除最后一条记录 ***/
+btnClearAll.addEventListener("click", async () => {
+  if (!confirm("确定要删除最后一条消息吗？")) return;
+
+  try {
+    const res = await fetch("/remove_last_entry", { method: "POST" });
+    const data = await res.json();
+
+    if (data.status === "ok") {
+      // 🔹 同步本地当前对话
+      const conv = getActiveConv();
+      if (conv && conv.messages.length > 0) {
+        conv.messages.pop(); // 删除最后一条消息
+        save();
+        renderMessages();
+      }
+      alert("已删除最后一条记录！");
+    } else if (data.status === "empty") {
+      alert("没有可删除的聊天记录！");
+    } else {
+      alert("删除失败：" + (data.message || "未知错误"));
+    }
+  } catch (err) {
+    console.error("删除最后一条记录失败:", err);
+    alert("无法连接服务器！");
+  }
+});
+
 
   document.getElementById("btn-clear-history").addEventListener("click", () => {
     if (confirm("确定要清空当前对话历史吗？")) {

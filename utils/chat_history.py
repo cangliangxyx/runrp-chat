@@ -140,3 +140,27 @@ class ChatHistory:
             bool: True 表示没有任何历史记录
         """
         return len(self.entries) == 0
+
+    def remove_last_entry(self) -> None:
+        """
+        删除最后一条对话记录
+
+        如果历史为空，不执行任何操作。
+        删除后会自动保存到文件。
+        """
+        if not self.entries:
+            logger.warning("[ChatHistory] 无法删除：当前没有任何历史记录。")
+            return
+
+        removed_entry = self.entries.pop()  # 删除最后一条
+        logger.info(
+            f"[ChatHistory] 已删除最后一条记录，时间: {removed_entry.get('timestamp', '未知')}，"
+            f"用户内容: {removed_entry.get('user', '')[:30]}..."
+        )
+
+        self.save_history()
+
+
+if __name__ == "__main__":
+    history = ChatHistory()
+    history.remove_last_entry()  # 删除最新一条记录

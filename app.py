@@ -148,6 +148,23 @@ async def get_system_rules():
     return JSONResponse({"rules": list(PROMPT_FILES.keys())})
 
 # -----------------------------
+# 删除最后一条聊天记录
+# -----------------------------
+@app.post("/remove_last_entry")
+async def remove_last_entry():
+    """删除最后一条聊天记录"""
+    try:
+        if chat_history.is_empty():
+            return JSONResponse({"status": "empty", "message": "没有可删除的记录"}, status_code=400)
+
+        chat_history.remove_last_entry()
+        logger.info("[操作] 已删除最后一条聊天记录 (来自 Web)")
+        return JSONResponse({"status": "ok"})
+    except Exception as e:
+        logger.error(f"[remove_last_entry] 删除最后一条记录失败: {e}", exc_info=True)
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+# -----------------------------
 # 启动服务
 # -----------------------------
 if __name__ == "__main__":
