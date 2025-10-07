@@ -1,4 +1,4 @@
-// system_rules.js – 系统规则
+/*** systemRules.js ***/
 export async function loadSystemRules() {
   try {
     const res = await fetch("/system_rules");

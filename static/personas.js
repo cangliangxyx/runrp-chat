@@ -1,4 +1,4 @@
-// personas.js – 人物管理相关
+/*** personas.js ***/
 export async function loadPersonas() {
   try {
     const res = await fetch("/personas");
@@ -35,10 +35,4 @@ export async function refreshCurrentPersonas() {
     const current = data.personas.filter(p => p.selected).map(p => p.name).join(", ") || "无";
     document.getElementById("current-personas-display").textContent = current;
   } catch {}
-}
-
-// 初始化按钮事件
-export function initPersonas() {
-  document.getElementById("btn-update-personas").addEventListener("click", updatePersonas);
-  loadPersonas();
 }
