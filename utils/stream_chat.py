@@ -45,7 +45,19 @@ def parse_stream_chunk(data_str: str) -> str | None:
 
         # ✅ OpenAI 风格
         if "choices" in chunk:
-            delta = chunk["choices"][0].get("delta", {})
+            choices = chunk.get("choices")
+            # 防御性判断：必须是非空列表
+            if not isinstance(choices, list) or len(choices) == 0:
+                logger.debug(f"[空或非法 choices] {chunk}")
+                return None
+
+            choice = choices[0]
+            # 有些 chunk 只包含 finish_reason，不包含 delta
+            if "delta" not in choice:
+                logger.debug(f"[无 delta 字段] {chunk}")
+                return None
+
+            delta = choice.get("delta", {})
             return delta.get("content")
 
         # ✅ Gemini 风格
