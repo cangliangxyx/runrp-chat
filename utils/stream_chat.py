@@ -43,7 +43,7 @@ def parse_stream_chunk(data_str: str) -> str | None:
     try:
         chunk = json.loads(data_str)
 
-        # ✅ OpenAI 风格
+        # OpenAI 风格
         if "choices" in chunk:
             choices = chunk.get("choices")
             # 防御性判断：必须是非空列表
@@ -60,7 +60,7 @@ def parse_stream_chunk(data_str: str) -> str | None:
             delta = choice.get("delta", {})
             return delta.get("content")
 
-        # ✅ Gemini 风格
+        # Gemini 风格
         elif "candidates" in chunk:
             parts = chunk["candidates"][0].get("content", {}).get("parts", [])
             return "".join(p.get("text", "") for p in parts if "text" in p)
@@ -70,7 +70,11 @@ def parse_stream_chunk(data_str: str) -> str | None:
             return None
 
     except json.JSONDecodeError:
-        logger.warning(f"无效 JSON: {data_str}")
+        # 忽略流结束标志 [DONE]
+        if data_str.strip() == "[DONE]":
+            logger.debug("检测到流结束标志 [DONE]")
+        else:
+            logger.warning(f"无效 JSON: {data_str}")
         return None
 
 
@@ -95,6 +99,8 @@ async def execute_model(
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {client_settings['api_key']}"}
 
     full_response_text = ""
+    got_done_flag = False  # 标记是否检测到流正常结束
+
     try:
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream("POST", client_settings["base_url"], headers=headers, json=payload) as response:
@@ -107,11 +113,13 @@ async def execute_model(
                         continue
                     data_str = line[len("data: "):].strip()
 
-                    # ✅ 处理结束符
-                    if data_str.strip() in ("[DONE]", ""):
+                    # 检测流式结束信号
+                    if data_str == "[DONE]":
+                        got_done_flag = True
+                        logger.debug(" 检测到 [DONE] 信号，流式传输结束")
                         break
 
-                    # ✅ 调用统一解析器
+                    # 调用统一解析器
                     delta_content = parse_stream_chunk(data_str)
                     if delta_content:
                         full_response_text += delta_content
@@ -119,6 +127,13 @@ async def execute_model(
 
     except httpx.RequestError as e:
         logger.error(f"请求模型接口异常: {e}")
+
+    # 等待输出缓冲刷新，防止终端打印被截断
+    await asyncio.sleep(5)
+
+    # 检查流是否完整
+    if not got_done_flag:
+        logger.warning("流式传输未检测到 [DONE]，可能中途被中断，输出可能不完整")
 
     # 保存历史
     if full_response_text.strip():
@@ -132,6 +147,8 @@ async def execute_model(
         else:
             chat_history.add_entry(user_input, full_response_text)
             logger.info("[对话已保存] 用户输入 + 模型回复")
+
+    logger.info("\n[生成完成] 模型回复已输出完成")
 
 
 # -----------------------------

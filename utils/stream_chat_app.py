@@ -5,6 +5,7 @@ import logging
 from typing import AsyncGenerator
 from colorama import init
 import httpx
+import asyncio
 
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry
@@ -42,7 +43,7 @@ def parse_stream_chunk(data_str: str) -> str | None:
     try:
         chunk = json.loads(data_str)
 
-        # ✅ OpenAI 风格
+        # OpenAI 风格
         if "choices" in chunk:
             choices = chunk.get("choices")
             # 防御性判断：必须是非空列表
@@ -59,7 +60,7 @@ def parse_stream_chunk(data_str: str) -> str | None:
             delta = choice.get("delta", {})
             return delta.get("content")
 
-        # ✅ Gemini 风格
+        # Gemini 风格
         elif "candidates" in chunk:
             candidates = chunk.get("candidates", [])
             if not isinstance(candidates, list) or len(candidates) == 0:
@@ -121,6 +122,7 @@ async def execute_model_for_app(
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {client_settings['api_key']}"}
 
     chunks = []
+    got_done_flag = False  # 标记是否检测到流正常结束
 
     try:
         async with httpx.AsyncClient(timeout=None) as client:
@@ -139,11 +141,13 @@ async def execute_model_for_app(
                     if DEBUG_STREAM:
                         print(f"[DEBUG] 原始流: {data_str}")
 
-                    # ✅ 结束标记
-                    if data_str.strip() in ("[DONE]", ""):
+                    # 检测流式结束信号
+                    if data_str == "[DONE]":
+                        got_done_flag = True
+                        logger.debug(" 检测到 [DONE] 信号，流式传输结束")
                         break
 
-                    # ✅ 调用统一解析器
+                    # 调用统一解析器
                     delta_content = parse_stream_chunk(data_str)
                     if delta_content:
                         chunks.append(delta_content)
@@ -170,6 +174,13 @@ async def execute_model_for_app(
         yield {"type": "error", "error": error_msg}
         return
 
+    # 等待输出缓冲刷新，防止终端打印被截断
+    await asyncio.sleep(5)
+
+    # 检查流是否完整
+    if not got_done_flag:
+        logger.warning("流式传输未检测到 [DONE]，可能中途被中断，输出可能不完整")
+
     # 保存历史
     full_response_text = "".join(chunks)
     if full_response_text.strip():
@@ -181,5 +192,5 @@ async def execute_model_for_app(
             chat_history.add_entry(user_input, full_response_text)
         chat_history.save_history()
 
-    # ✅ 输出最终完整内容
+    # 输出最终完整内容
     yield {"type": "end", "full": full_response_text}

@@ -8,7 +8,6 @@ FROM python:3.12-slim
 #RUN apt-get clean
 #RUN rm -rf /var/lib/apt/lists/*1
 
-
 # 创建项目目录并设置为工作目录
 RUN mkdir /opt/project
 WORKDIR /opt/project
