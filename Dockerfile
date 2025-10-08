@@ -6,7 +6,7 @@ FROM python:3.12-slim
 #RUN apt-get update
 #RUN apt-get install -y libc6
 #RUN apt-get clean
-#RUN rm -rf /var/lib/apt/lists/*
+#RUN rm -rf /var/lib/apt/lists/*1
 
 
 # 创建项目目录并设置为工作目录
