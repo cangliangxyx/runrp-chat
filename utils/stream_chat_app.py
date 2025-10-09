@@ -92,15 +92,15 @@ async def execute_model_for_app(
     personas: list[str],
     web_input: str = "",
     nsfw: bool = True,
+    stream: bool = False,  # 流式或非流式
 ) -> AsyncGenerator[dict, None]:
     """
-    调用模型并流式返回
+    调用模型并返回结果，支持流式和非流式
     每次 yield 一个 dict，包含：
     { "type": "chunk", "content": "文本片段" }
     { "type": "end", "full": "完整回复" }
     { "type": "error", "error": "错误描述" }
     """
-
     logger.info(f"[执行模型] nsfw={nsfw}")
 
     # 构建 messages
@@ -118,40 +118,58 @@ async def execute_model_for_app(
     # 模型配置
     model_details = model_registry(model_name)
     client_settings = CLIENT_CONFIGS[model_details["client_name"]]
-    payload = {"model": model_details["label"], "stream": True, "messages": messages}
+    payload = {"model": model_details["label"], "stream": stream, "messages": messages}
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {client_settings['api_key']}"}
 
     chunks = []
-    got_done_flag = False  # 标记是否检测到流正常结束
+    got_done_flag = False
 
     try:
         async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream("POST", client_settings["base_url"], headers=headers, json=payload) as response:
+            if stream:
+                # 流式模式
+                async with client.stream("POST", client_settings["base_url"], headers=headers, json=payload) as response:
+                    if response.status_code != 200:
+                        error_msg = f"模型接口返回非200状态码: {response.status_code}"
+                        logger.error(error_msg)
+                        yield {"type": "error", "error": error_msg}
+                        return
+
+                    async for line in response.aiter_lines():
+                        if not (line and line.startswith("data: ")):
+                            continue
+                        data_str = line[6:].strip()
+
+                        if DEBUG_STREAM:
+                            print(f"[DEBUG] 原始流: {data_str}")
+
+                        if data_str == "[DONE]":
+                            got_done_flag = True
+                            break
+
+                        delta_content = parse_stream_chunk(data_str)
+                        if delta_content:
+                            chunks.append(delta_content)
+                            yield {"type": "chunk", "content": delta_content}
+
+            else:
+                # 非流式模式
+                response = await client.post(client_settings["base_url"], headers=headers, json=payload)
                 if response.status_code != 200:
                     error_msg = f"模型接口返回非200状态码: {response.status_code}"
                     logger.error(error_msg)
                     yield {"type": "error", "error": error_msg}
                     return
 
-                async for line in response.aiter_lines():
-                    if not (line and line.startswith("data: ")):
-                        continue
-                    data_str = line[6:].strip()
-
-                    if DEBUG_STREAM:
-                        print(f"[DEBUG] 原始流: {data_str}")
-
-                    # 检测流式结束信号
-                    if data_str == "[DONE]":
-                        got_done_flag = True
-                        logger.debug(" 检测到 [DONE] 信号，流式传输结束")
-                        break
-
-                    # 调用统一解析器
-                    delta_content = parse_stream_chunk(data_str)
-                    if delta_content:
-                        chunks.append(delta_content)
-                        yield {"type": "chunk", "content": delta_content}
+                data = response.json()
+                # 解析 OpenAI / Gemini 风格
+                if "choices" in data and data["choices"]:
+                    for choice in data["choices"]:
+                        text = choice.get("message", {}).get("content") or choice.get("text") or ""
+                        if text:
+                            chunks.append(text)
+                            yield {"type": "chunk", "content": text}
+                got_done_flag = True
 
     except httpx.TimeoutException:
         error_msg = "[网络超时] 模型接口未响应"
@@ -174,12 +192,11 @@ async def execute_model_for_app(
         yield {"type": "error", "error": error_msg}
         return
 
-    # 等待输出缓冲刷新，防止终端打印被截断
+    # 等待输出缓冲刷新
     await asyncio.sleep(0.05)
 
-    # 检查流是否完整
     if not got_done_flag:
-        logger.warning("流式传输未检测到 [DONE]，可能中途被中断，输出可能不完整")
+        logger.warning("流式传输未检测到 [DONE]，输出可能不完整")
 
     # 保存历史
     full_response_text = "".join(chunks)
@@ -194,3 +211,4 @@ async def execute_model_for_app(
 
     # 输出最终完整内容
     yield {"type": "end", "full": full_response_text}
+

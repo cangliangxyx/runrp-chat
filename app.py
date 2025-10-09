@@ -55,7 +55,8 @@ async def chat(
     prompt: str = Form(...),
     system_rule: str = Form("default"),
     web_input: str = Form(""),
-    nsfw: str = Form("true")
+    nsfw: str = Form("true"),
+    stream: str = Form("true"),
 ):
     logger.info(f"[chat] 接收到表单参数: model={model}, system_rule={system_rule}, nsfw={nsfw}")
 
@@ -68,6 +69,7 @@ async def chat(
         raise HTTPException(status_code=400, detail=f"system_rule '{system_rule}' 不存在")
 
     nsfw_enabled = nsfw.lower() == "true"
+    stream_enabled = stream.lower() == "true"
 
     try:
         async def event_stream():
@@ -78,11 +80,12 @@ async def chat(
                 personas=current_personas,
                 web_input=web_input,
                 nsfw=nsfw_enabled,
+                stream=stream_enabled
             ):
-                # ✅ 转成 JSON 行（NDJSON）
+                # 转成 JSON 行（NDJSON）
                 yield json.dumps(chunk, ensure_ascii=False) + "\n"
 
-        # ✅ 修改 media_type，前端方便解析
+        # 修改 media_type，前端方便解析
         return StreamingResponse(event_stream(), media_type="application/json")
 
     except Exception as e:

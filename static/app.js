@@ -70,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnClearAll = document.getElementById("btn-clear-all");
   const convList = document.getElementById("conv-list");
   const webInputEl = document.getElementById("web_input");
+  const streamCheckbox = document.getElementById("stream-checkbox"); // ✅ Stream 开关
 
   const overlay = document.createElement("div");
   overlay.id = "sidebar-overlay";
@@ -221,9 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return { conv, bubble: nodes[nodes.length - 1] };
   }
 
-  function scrollToBottom() {
-    requestAnimationFrame(() => messagesEl.scrollTop = messagesEl.scrollHeight);
-  }
+  function scrollToBottom() { requestAnimationFrame(() => messagesEl.scrollTop = messagesEl.scrollHeight); }
 
   function openSidebar() { sidebar.classList.add("open"); overlay.style.display = "block"; }
   function closeSidebar() { sidebar.classList.remove("open"); overlay.style.display = "none"; }
@@ -231,35 +230,26 @@ document.addEventListener("DOMContentLoaded", () => {
   btnToggle.addEventListener("click", () => sidebar.classList.contains("open") ? closeSidebar() : openSidebar());
   btnNew.addEventListener("click", () => { newConversation(); openSidebar(); });
 
-
-/*** 删除最后一条记录 ***/
-btnClearAll.addEventListener("click", async () => {
-  if (!confirm("确定要删除最后一条消息吗？")) return;
-
-  try {
-    const res = await fetch("/remove_last_entry", { method: "POST" });
-    const data = await res.json();
-
-    if (data.status === "ok") {
-      // 🔹 同步本地当前对话
-      const conv = getActiveConv();
-      if (conv && conv.messages.length > 0) {
-        conv.messages.pop(); // 删除最后一条消息
-        save();
-        renderMessages();
-      }
-      alert("已删除最后一条记录！");
-    } else if (data.status === "empty") {
-      alert("没有可删除的聊天记录！");
-    } else {
-      alert("删除失败：" + (data.message || "未知错误"));
+  /*** -------------------- 删除最后一条记录 -------------------- ***/
+  btnClearAll.addEventListener("click", async () => {
+    if (!confirm("确定要删除最后一条消息吗？")) return;
+    try {
+      const res = await fetch("/remove_last_entry", { method: "POST" });
+      const data = await res.json();
+      if (data.status === "ok") {
+        const conv = getActiveConv();
+        if (conv && conv.messages.length > 0) {
+          conv.messages.pop();
+          save(); renderMessages();
+        }
+        alert("已删除最后一条记录！");
+      } else if (data.status === "empty") {
+        alert("没有可删除的聊天记录！");
+      } else alert("删除失败：" + (data.message || "未知错误"));
+    } catch (err) {
+      console.error("删除最后一条记录失败:", err); alert("无法连接服务器！");
     }
-  } catch (err) {
-    console.error("删除最后一条记录失败:", err);
-    alert("无法连接服务器！");
-  }
-});
-
+  });
 
   document.getElementById("btn-clear-history").addEventListener("click", () => {
     if (confirm("确定要清空当前对话历史吗？")) {
@@ -276,7 +266,7 @@ btnClearAll.addEventListener("click", async () => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
 
-  /*** -------------------- 表单提交 -------------------- ***/
+  /*** -------------------- 表单提交（带 Stream 支持） -------------------- ***/
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const model = modelSel.value;
@@ -285,6 +275,7 @@ btnClearAll.addEventListener("click", async () => {
     if (!prompt) return;
 
     const nsfw = document.getElementById("nsfw-checkbox").checked ? "true" : "false";
+    const stream = streamCheckbox.checked ? "true" : "false"; // ✅ 取勾选状态
 
     appendMessage("user", prompt);
     promptEl.value = "";
@@ -300,6 +291,7 @@ btnClearAll.addEventListener("click", async () => {
     formData.append("history", JSON.stringify(conv?.messages || []));
     formData.append("web_input", webInputEl?.value.trim() || "");
     formData.append("nsfw", nsfw);
+    formData.append("stream", stream); // ✅ 发送 Stream 状态
 
     sendBtn.disabled = promptEl.disabled = true;
 
@@ -314,7 +306,6 @@ btnClearAll.addEventListener("click", async () => {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
 
         let lines = buffer.split(/\r?\n/);
@@ -364,9 +355,8 @@ btnClearAll.addEventListener("click", async () => {
       try {
         const res = await fetch("/reload_history", { method: "POST" });
         const data = await res.json();
-        if (data.status === "ok") {
-          alert("已从文件重新加载历史记录！");
-        } else alert("重新加载失败！");
+        if (data.status === "ok") alert("已从文件重新加载历史记录！");
+        else alert("重新加载失败！");
       } catch (err) {
         console.error("重新加载历史记录失败", err);
         alert("无法连接服务器！");

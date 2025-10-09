@@ -7,8 +7,9 @@
   <title>runrp-chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/static/app.css?v=1.0.4" />
-  <script src="/static/app.js?v=1.0.1" defer></script>
+  <script src="/static/app.js?v=1.0.2" defer></script>
 </head>
+
 <body>
   <div class="app with-sidebar">
     <!-- 左侧边栏 -->
@@ -42,10 +43,11 @@
           <label for="nsfw-checkbox">nsfw</label>
           <input type="checkbox" id="nsfw-checkbox" name="nsfw" checked>
         </div>
-        <!-- 实时显示当前出场人物 -->
-        <div class="current-personas">
-          <strong>当前出场人物:</strong>
-          <span id="current-personas-display">无</span>
+
+        <!-- Stream 开关 -->
+        <div class="stream-toggle">
+          <label for="stream-checkbox">stream</label>
+          <input type="checkbox" id="stream-checkbox" name="stream" checked>
         </div>
 
           <!-- 去除侧边栏清理按钮 -->
