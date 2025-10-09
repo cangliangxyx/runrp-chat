@@ -42,6 +42,13 @@ DEFAULT_MODELS = {
         "default_temperature": 0.6,
         "client_name": "deepseek",
     },
+    # google_api
+    "google_api": {
+        "label": "gemini-2.5-flash",
+        "supports_streaming": True,
+        "default_temperature": 0.6,
+        "client_name": "google_api",
+    },
 }
 
 def model_registry(model_name: str = None):
@@ -54,7 +61,7 @@ def list_model_ids() -> list:
     return list(DEFAULT_MODELS.keys())
 
 if __name__ == "__main__":
-    data = model_registry('google')
+    data = model_registry('google_api')
     print(data)
 
     print(list_model_ids())

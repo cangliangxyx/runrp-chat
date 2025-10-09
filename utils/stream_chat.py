@@ -31,6 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
 MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
 SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+# SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
 
 
 # -----------------------------
@@ -129,7 +130,7 @@ async def execute_model(
         logger.error(f"请求模型接口异常: {e}")
 
     # 等待输出缓冲刷新，防止终端打印被截断
-    await asyncio.sleep(5)
+    await asyncio.sleep(0.05)
 
     # 检查流是否完整
     if not got_done_flag:

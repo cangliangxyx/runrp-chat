@@ -175,7 +175,7 @@ async def execute_model_for_app(
         return
 
     # 等待输出缓冲刷新，防止终端打印被截断
-    await asyncio.sleep(5)
+    await asyncio.sleep(0.05)
 
     # 检查流是否完整
     if not got_done_flag:
