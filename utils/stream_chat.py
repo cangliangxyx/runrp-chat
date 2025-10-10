@@ -220,7 +220,8 @@ async def auto_fill_initial_story(model_name, system_instructions, current_perso
 async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
-    system_instructions = get_system_prompt("安清雪")     # 获取默认配置文件
+    # system_instructions = get_system_prompt("安清雪")     # 获取默认配置文件
+    system_instructions = get_system_prompt("真实现实恋爱模拟器")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
 
     # 只有历史记录为空才填充初始剧情
