@@ -24,7 +24,8 @@ DEFAULT_MODELS = {
         "client_name": "link_api",
     },
     "gpt-5-chat-latest": {
-        "label": "gpt-5-chat-latest",               # $0.001/K tokens（vip）
+        "label": "gpt-5-chat-latest",               # $0.001/K（vip）
+        # "label": "gpt-4o-mini",               # $0.00015/K（vip）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
