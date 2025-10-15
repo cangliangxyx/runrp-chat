@@ -1,7 +1,11 @@
-# prompt/stream_api.py
+# prompt/stream_chat.py
+
+import json
 import asyncio
-from openai import OpenAI
+
+import httpx
 import logging
+from typing import AsyncGenerator
 from colorama import init, Fore
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry, list_model_ids
@@ -11,9 +15,8 @@ from utils.persona_loader import select_personas, get_default_personas
 from utils.message_builder import build_messages
 from utils.print_messages_colored import print_messages_colored, print_model_output_colored
 
-# -----------------------------
+
 # 初始化颜色输出
-# -----------------------------
 init(autoreset=True)
 
 # -----------------------------
@@ -25,110 +28,172 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # -----------------------------
 # 全局变量
 # -----------------------------
-chat_history = ChatHistory(max_entries=50)
-MAX_HISTORY_ENTRIES = 1
-SAVE_STORY_SUMMARY_ONLY = True
+chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
+MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
+SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+# SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
+
 
 # -----------------------------
-# 一次性调用模型
+# 统一的流解析函数
 # -----------------------------
-async def call_model_once(model_name: str, user_input: str, system_prompt: str, personas: list[str]) -> str:
-    """调用模型，一次性返回完整文本"""
-    model_info = model_registry(model_name)
-    client_key = model_info["client_name"]
+def parse_stream_chunk(data_str: str) -> str | None:
+    """
+    兼容 OpenAI / Gemini 流式返回，解析内容片段
+    """
+    try:
+        chunk = json.loads(data_str)
+        # OpenAI 风格
+        if "choices" in chunk:
+            choices = chunk.get("choices")
+            # 防御性判断：必须是非空列表
+            if not isinstance(choices, list) or len(choices) == 0:
+                logger.debug(f"[空或非法 choices] {chunk}")
+                return None
+
+            choice = choices[0]
+            # 有些 chunk 只包含 finish_reason，不包含 delta
+            if "delta" not in choice:
+                logger.debug(f"[无 delta 字段] {chunk}")
+                return None
+
+            delta = choice.get("delta", {})
+            return delta.get("content")
+
+        # Gemini 风格
+        elif "candidates" in chunk:
+            parts = chunk["candidates"][0].get("content", {}).get("parts", [])
+            return "".join(p.get("text", "") for p in parts if "text" in p)
+
+        else:
+            logger.debug(f"[未知结构] {chunk}")
+            return None
+
+    except json.JSONDecodeError:
+        # 忽略流结束标志 [DONE]
+        if data_str.strip() == "[DONE]":
+            logger.debug("检测到流结束标志 [DONE]")
+        else:
+            logger.warning(f"无效 JSON: {data_str}")
+        return None
+
+
+# -----------------------------
+# 调用模型并流式返回
+# -----------------------------
+async def execute_model(
+    model_name: str,
+    user_input: str,
+    system_instructions: str,
+    personas: list[str],
+    stream: bool = False,  # 新增参数，默认流式
+) -> AsyncGenerator[str, None]:
+    model_details = model_registry(model_name)
+    client_key = model_details["client_name"]
     client_settings = CLIENT_CONFIGS[client_key]
-    base_url = client_settings["base_url"].rstrip("/chat/completions")
 
-    messages = build_messages(
-        system_prompt,
-        personas,
-        chat_history,
-        user_input,
-        max_history_entries=MAX_HISTORY_ENTRIES,
-        optional_message=""
-    )
+    logger.info(f"[调用模型] {model_details['label']} @ {client_settings['base_url']}")
+
+    messages = [
+        {"role": "user", "content": f"用户输入内容：{user_input}"}
+    ]
+
+    messages.append({"role": "system", "content": system_instructions})
+
     print_messages_colored(messages)
 
-    client = OpenAI(api_key=client_settings["api_key"], base_url=base_url)
+    payload = {"model": model_details["label"], "stream": stream, "messages": messages}
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {client_settings['api_key']}"}
+
+    full_response_text = ""
+    got_done_flag = False
 
     try:
-        response = client.chat.completions.create(
-            model=model_info["label"],
-            messages=messages
-        )
-        text = response.choices[0].message.content
-        return text
-    except Exception as e:
-        logger.error(f"[模型调用失败] {e}")
-        return ""
+        async with httpx.AsyncClient(timeout=None) as client:
+            if stream:
+                # 流式处理
+                async with client.stream("POST", client_settings["base_url"], headers=headers, json=payload) as response:
+                    if response.status_code != 200:
+                        logger.error(f"模型接口返回非200状态码: {response.status_code}")
+                        return
 
-# -----------------------------
-# 执行模型并保存历史
-# -----------------------------
-async def execute_model(model_name: str, user_input: str, system_prompt: str, personas: list[str]):
-    full_text = await call_model_once(model_name, user_input, system_prompt, personas)
+                    async for line in response.aiter_lines():
+                        if not (line and line.startswith("data: ")):
+                            continue
+                        data_str = line[len("data: "):].strip()
 
-    if full_text.strip():
-        if SAVE_STORY_SUMMARY_ONLY:
-            summary = chat_history._extract_summary_from_assistant(full_text)
-            if summary:
-                chat_history.add_entry(user_input, summary)
-                logger.info("[对话已保存] 用户输入 + 摘要")
-        else:
-            chat_history.add_entry(user_input, full_text)
-            logger.info("[对话已保存] 用户输入 + 完整回复")
+                        if data_str == "[DONE]":
+                            got_done_flag = True
+                            logger.debug(" 检测到 [DONE] 信号，流式传输结束")
+                            break
 
-    print_model_output_colored(full_text, color=Fore.LIGHTBLACK_EX)
-    logger.info("[模型回复完成]\n")
+                        delta_content = parse_stream_chunk(data_str)
+                        if delta_content:
+                            full_response_text += delta_content
+                            yield delta_content
+
+            else:
+                # 非流式处理
+                response = await client.post(client_settings["base_url"], headers=headers, json=payload)
+                if response.status_code != 200:
+                    logger.error(f"模型接口返回非200状态码: {response.status_code}")
+                    return
+
+                data = response.json()
+                # 兼容 OpenAI 风格
+                if "choices" in data and data["choices"]:
+                    for choice in data["choices"]:
+                        # 有些接口可能用 'message' 包含内容
+                        text = choice.get("message", {}).get("content") or choice.get("text") or ""
+                        full_response_text += text
+                    yield full_response_text
+                got_done_flag = True
+
+    except httpx.RequestError as e:
+        logger.error(f"请求模型接口异常: {e}")
+
+    await asyncio.sleep(0.05)
+
+    if not got_done_flag:
+        logger.warning("流式传输未检测到 [DONE]，输出可能不完整")
+
+    logger.info("\n[生成完成] 模型回复已输出完成")
 
 # -----------------------------
 # 模型选择
 # -----------------------------
 async def select_model() -> str:
-    models = list_model_ids()
+    available_models = list_model_ids()
     print("\n可用模型：")
-    for idx, m in enumerate(models, start=1):
-        print(f"{idx}. {m}")
+    for i, m in enumerate(available_models):
+        print(f"{i + 1}. {m}")
 
     while True:
         try:
-            choice = int(input("请选择模型编号: ")) - 1
-            if 0 <= choice < len(models):
-                logger.info(f"[已选择模型] {models[choice]}")
-                return models[choice]
+            idx = int(input("请选择模型编号: ")) - 1
+            if 0 <= idx < len(available_models):
+                model_name = available_models[idx]
+                logger.info(f"[已选择模型] {model_name}")
+                return model_name
             print("无效选择，请重新输入。")
         except ValueError:
             print("请输入数字。")
 
-# -----------------------------
-# 自动填充初始剧情
-# -----------------------------
-async def auto_fill_initial_story(model_name: str, system_prompt: str, personas: list[str]):
-    if chat_history.is_empty():
-        start_message = "这是一个测试故事的起点。"
-        logger.info(f"[自动输入] {start_message}")
-        await execute_model(model_name, start_message, system_prompt, personas)
-        logger.info("[初始剧情输出完成]")
-    else:
-        logger.info("[跳过] 历史记录非空")
 
 # -----------------------------
 # 主循环
 # -----------------------------
 async def main_loop():
-    personas = get_default_personas()
-    model_name = await select_model()
-    system_prompt = get_system_prompt("安清雪")
-    logger.info(f"[默认出场人物] {personas}")
-
-    await auto_fill_initial_story(model_name, system_prompt, personas)
+    current_personas = get_default_personas()           # 人物加载
+    model_name = await select_model()                   # 模型选择
+    system_instructions = get_system_prompt("book")     # 获取默认配置文件
+    logger.info(f"[默认出场人物] {current_personas}")
 
     while True:
         user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
-
         if user_input == "{clear}":
             chat_history.clear_history()
-            logger.info("[历史记录已清空]")
+            logger.info("[操作] 历史记录已清空")
             continue
         if user_input == "{history}":
             print(chat_history.format_history(MAX_HISTORY_ENTRIES))
@@ -137,11 +202,15 @@ async def main_loop():
             model_name = await select_model()
             continue
         if user_input.startswith("{personas}"):
-            personas = await select_personas()
-            logger.info(f"[人物更新] {personas}")
+            current_personas = await select_personas()
+            logger.info(f"[人物更新] 当前出场人物: {current_personas}")
             continue
 
-        await execute_model(model_name, user_input, system_prompt, personas)
+        async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
+            print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
+        logger.info("\n[生成完成] 模型回复已输出完成 ")
+
+# 参考故事进行续写，续写故事不少于原始故事，给出续写的详细的章节目录，每个续写章节的介绍（必须是包含人物、起因、事件详细过程、结果的客观事实。其中的关键名称、关键话语、关键动作、约定、结论等必须经量详细。）
 
 if __name__ == "__main__":
     asyncio.run(main_loop())

@@ -12,6 +12,7 @@ PROMPT_FILES = {
     "test": "system_prompt_test.md",
     "nsfw": "system_prompt_nsfw.md",
     "temp": "temp.md",
+    "book": "book.md",
 }
 
 PROMPT_CACHE = {}
@@ -33,4 +34,4 @@ def get_system_prompt(name: str) -> str:
     return PROMPT_CACHE[name]
 
 if __name__ == "__main__":
-    print(get_system_prompt("lamnq"))
+    print(get_system_prompt("book"))

@@ -238,7 +238,7 @@ async def main_loop():
             continue
         if user_input.startswith("{switch}"):
             model_name = await select_model()
-            continue
+            continue# 分析故事给出描写手笔、文风需要给出详细的性爱描写手法，用词等
         if user_input.startswith("{personas}"):
             current_personas = await select_personas()
             logger.info(f"[人物更新] 当前出场人物: {current_personas}")
