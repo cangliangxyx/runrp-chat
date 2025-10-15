@@ -37,6 +37,31 @@ SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太�
 # -----------------------------
 # 统一的流解析函数
 # -----------------------------
+
+async def auto_fill_initial_story(model_name, system_instructions, current_personas):
+    """仅在历史记录为空时填充初始剧情"""
+    if chat_history.is_empty():
+        AUTO_START_MESSAGE = '''
+        #### **第1章 我看到校花林洛萱被强奸**
+        *   **人物**：常亮（留校辅导员）、林洛萱（英语系校花）、吕昊（校内富二代混子）、刘老太（宿管）。
+        *   **起因**：常亮在暑假护校期间，利用职务之便获得了一栋无人空楼的钥匙，并发现这里是偷窥对面女生宿舍的最佳地点。他对校花林洛萱抱有强烈的窥探欲。
+        *   **事件过程**：
+            1.  常亮进入空楼，用手机摄像头对准林洛萱的宿舍窗口进行偷窥。
+            2.  他看到校内混子吕昊进入了林洛萱的宿舍，并反锁了门。吕昊对林洛萱动手动脚，并在激烈的争辩后，强行与她发生了关系。
+            3.  林洛萱关灯后，常亮意识到将发生大事，迅速离开空楼，企图爬进林洛萱宿舍的阳台，但因楼下有水沟而失败。
+            4.  常亮心生一计，打电话给宿管刘老太，谎称询问情况，实则确认了刘老太因修理开水机而离开值班室。他趁机溜进女生宿舍楼。
+            5.  他用万能钥匙打开林洛萱隔壁的空宿舍，成功翻到林洛萱宿舍的阳台上进行偷窥。
+            6.  在月光下，他目睹了吕昊对林洛萱施暴的全过程：吕昊将林洛萱的腿用丝袜绑在床栏上摆出一字马造型进行强奸；强迫林洛萱称呼他为“主人”；用自己的内裤塞住林洛萱的嘴；采用各种高难度姿势对她进行长时间的、粗暴的奸淫，直至林洛萱被操得高潮迭起、多次潮吹甚至昏厥。
+            7.  在吕昊完事后，与林洛萱一同在床上休息时，常亮趁机逃离了现场。
+        *   **结果**：常亮用手机录下了部分吕昊强奸林洛萱的视频。这次偷窥经历给他带来了巨大的精神冲击，让他对林洛萱产生了强烈的迷恋和占有欲，这段视频也成为了他日后的心魔。
+        '''
+        logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
+        async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions, current_personas):
+            print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
+        logger.info("\n[生成完成] 初始剧情输出完成")
+    else:
+        logger.info("[跳过] 历史记录非空，未填充初始剧情")
+
 def parse_stream_chunk(data_str: str) -> str | None:
     """
     兼容 OpenAI / Gemini 流式返回，解析内容片段
@@ -85,7 +110,6 @@ async def execute_model(
     model_name: str,
     user_input: str,
     system_instructions: str,
-    personas: list[str],
     stream: bool = False,  # 新增参数，默认流式
 ) -> AsyncGenerator[str, None]:
     model_details = model_registry(model_name)
@@ -95,10 +119,9 @@ async def execute_model(
     logger.info(f"[调用模型] {model_details['label']} @ {client_settings['base_url']}")
 
     messages = [
-        {"role": "user", "content": f"用户输入内容：{user_input}"}
+        {"role": "system", "content": system_instructions},
+        {"role": "user", "content": f"用户输入内容：{user_input}"},
     ]
-
-    messages.append({"role": "system", "content": system_instructions})
 
     print_messages_colored(messages)
 
@@ -183,11 +206,39 @@ async def select_model() -> str:
 # -----------------------------
 # 主循环
 # -----------------------------
+async def auto_fill_initial_story(model_name, system_instructions):
+    """仅在历史记录为空时填充初始剧情"""
+    if chat_history.is_empty():
+        AUTO_START_MESSAGE = '''
+        #### **第1章 我看到校花林洛萱被强奸**
+        *   **人物**：常亮（留校辅导员）、林洛萱（英语系校花）、吕昊（校内富二代混子）、刘老太（宿管）。
+        *   **起因**：常亮在暑假护校期间，利用职务之便获得了一栋无人空楼的钥匙，并发现这里是偷窥对面女生宿舍的最佳地点。他对校花林洛萱抱有强烈的窥探欲。
+        *   **事件过程**：
+            1.  常亮进入空楼，用手机摄像头对准林洛萱的宿舍窗口进行偷窥。
+            2.  他看到校内混子吕昊进入了林洛萱的宿舍，并反锁了门。吕昊对林洛萱动手动脚，并在激烈的争辩后，强行与她发生了关系。
+            3.  林洛萱关灯后，常亮意识到将发生大事，迅速离开空楼，企图爬进林洛萱宿舍的阳台，但因楼下有水沟而失败。
+            4.  常亮心生一计，打电话给宿管刘老太，谎称询问情况，实则确认了刘老太因修理开水机而离开值班室。他趁机溜进女生宿舍楼。
+            5.  他用万能钥匙打开林洛萱隔壁的空宿舍，成功翻到林洛萱宿舍的阳台上进行偷窥。
+            6.  在月光下，他目睹了吕昊对林洛萱施暴的全过程：吕昊将林洛萱的腿用丝袜绑在床栏上摆出一字马造型进行强奸；强迫林洛萱称呼他为“主人”；用自己的内裤塞住林洛萱的嘴；采用各种高难度姿势对她进行长时间的、粗暴的奸淫，直至林洛萱被操得高潮迭起、多次潮吹甚至昏厥。
+            7.  在吕昊完事后，与林洛萱一同在床上休息时，常亮趁机逃离了现场。
+        *   **结果**：常亮用手机录下了部分吕昊强奸林洛萱的视频。这次偷窥经历给他带来了巨大的精神冲击，让他对林洛萱产生了强烈的迷恋和占有欲，这段视频也成为了他日后的心魔。
+        '''
+        logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
+        async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions):
+            print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
+        logger.info("\n[生成完成] 初始剧情输出完成")
+    else:
+        logger.info("[跳过] 历史记录非空，未填充初始剧情")
+
+
 async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
     system_instructions = get_system_prompt("book")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
+
+    # 只有历史记录为空才填充初始剧情
+    await auto_fill_initial_story(model_name, system_instructions)
 
     while True:
         user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
