@@ -30,38 +30,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # -----------------------------
 chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
 MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
-SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
-# SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
+# SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
 
 
 # -----------------------------
 # 统一的流解析函数
 # -----------------------------
-
-async def auto_fill_initial_story(model_name, system_instructions, current_personas):
-    """仅在历史记录为空时填充初始剧情"""
-    if chat_history.is_empty():
-        AUTO_START_MESSAGE = '''
-        #### **第1章 我看到校花林洛萱被强奸**
-        *   **人物**：常亮（留校辅导员）、林洛萱（英语系校花）、吕昊（校内富二代混子）、刘老太（宿管）。
-        *   **起因**：常亮在暑假护校期间，利用职务之便获得了一栋无人空楼的钥匙，并发现这里是偷窥对面女生宿舍的最佳地点。他对校花林洛萱抱有强烈的窥探欲。
-        *   **事件过程**：
-            1.  常亮进入空楼，用手机摄像头对准林洛萱的宿舍窗口进行偷窥。
-            2.  他看到校内混子吕昊进入了林洛萱的宿舍，并反锁了门。吕昊对林洛萱动手动脚，并在激烈的争辩后，强行与她发生了关系。
-            3.  林洛萱关灯后，常亮意识到将发生大事，迅速离开空楼，企图爬进林洛萱宿舍的阳台，但因楼下有水沟而失败。
-            4.  常亮心生一计，打电话给宿管刘老太，谎称询问情况，实则确认了刘老太因修理开水机而离开值班室。他趁机溜进女生宿舍楼。
-            5.  他用万能钥匙打开林洛萱隔壁的空宿舍，成功翻到林洛萱宿舍的阳台上进行偷窥。
-            6.  在月光下，他目睹了吕昊对林洛萱施暴的全过程：吕昊将林洛萱的腿用丝袜绑在床栏上摆出一字马造型进行强奸；强迫林洛萱称呼他为“主人”；用自己的内裤塞住林洛萱的嘴；采用各种高难度姿势对她进行长时间的、粗暴的奸淫，直至林洛萱被操得高潮迭起、多次潮吹甚至昏厥。
-            7.  在吕昊完事后，与林洛萱一同在床上休息时，常亮趁机逃离了现场。
-        *   **结果**：常亮用手机录下了部分吕昊强奸林洛萱的视频。这次偷窥经历给他带来了巨大的精神冲击，让他对林洛萱产生了强烈的迷恋和占有欲，这段视频也成为了他日后的心魔。
-        '''
-        logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
-        async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions, current_personas):
-            print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
-        logger.info("\n[生成完成] 初始剧情输出完成")
-    else:
-        logger.info("[跳过] 历史记录非空，未填充初始剧情")
-
 def parse_stream_chunk(data_str: str) -> str | None:
     """
     兼容 OpenAI / Gemini 流式返回，解析内容片段
@@ -120,6 +95,7 @@ async def execute_model(
 
     messages = [
         {"role": "system", "content": system_instructions},
+        # {"role": "assistant", "content": f"以下是之前的故事进展：{summary_content}"},
         {"role": "user", "content": f"用户输入内容：{user_input}"},
     ]
 
@@ -180,6 +156,19 @@ async def execute_model(
     if not got_done_flag:
         logger.warning("流式传输未检测到 [DONE]，输出可能不完整")
 
+    # 保存历史
+    if full_response_text.strip():
+        if SAVE_STORY_SUMMARY_ONLY:
+            summary = chat_history._extract_summary_from_assistant(full_response_text)
+            if summary:
+                chat_history.add_entry(user_input, summary)
+                logger.info("[对话已保存] 用户输入 + 故事摘要")
+            else:
+                logger.info("[跳过保存] 未找到故事摘要")
+        else:
+            chat_history.add_entry(user_input, full_response_text)
+            logger.info("[对话已保存] 用户输入 + 模型回复")
+
     logger.info("\n[生成完成] 模型回复已输出完成")
 
 # -----------------------------
@@ -208,27 +197,27 @@ async def select_model() -> str:
 # -----------------------------
 async def auto_fill_initial_story(model_name, system_instructions):
     """仅在历史记录为空时填充初始剧情"""
-    if chat_history.is_empty():
-        AUTO_START_MESSAGE = '''
-        #### **第1章 我看到校花林洛萱被强奸**
-        *   **人物**：常亮（留校辅导员）、林洛萱（英语系校花）、吕昊（校内富二代混子）、刘老太（宿管）。
-        *   **起因**：常亮在暑假护校期间，利用职务之便获得了一栋无人空楼的钥匙，并发现这里是偷窥对面女生宿舍的最佳地点。他对校花林洛萱抱有强烈的窥探欲。
-        *   **事件过程**：
-            1.  常亮进入空楼，用手机摄像头对准林洛萱的宿舍窗口进行偷窥。
-            2.  他看到校内混子吕昊进入了林洛萱的宿舍，并反锁了门。吕昊对林洛萱动手动脚，并在激烈的争辩后，强行与她发生了关系。
-            3.  林洛萱关灯后，常亮意识到将发生大事，迅速离开空楼，企图爬进林洛萱宿舍的阳台，但因楼下有水沟而失败。
-            4.  常亮心生一计，打电话给宿管刘老太，谎称询问情况，实则确认了刘老太因修理开水机而离开值班室。他趁机溜进女生宿舍楼。
-            5.  他用万能钥匙打开林洛萱隔壁的空宿舍，成功翻到林洛萱宿舍的阳台上进行偷窥。
-            6.  在月光下，他目睹了吕昊对林洛萱施暴的全过程：吕昊将林洛萱的腿用丝袜绑在床栏上摆出一字马造型进行强奸；强迫林洛萱称呼他为“主人”；用自己的内裤塞住林洛萱的嘴；采用各种高难度姿势对她进行长时间的、粗暴的奸淫，直至林洛萱被操得高潮迭起、多次潮吹甚至昏厥。
-            7.  在吕昊完事后，与林洛萱一同在床上休息时，常亮趁机逃离了现场。
-        *   **结果**：常亮用手机录下了部分吕昊强奸林洛萱的视频。这次偷窥经历给他带来了巨大的精神冲击，让他对林洛萱产生了强烈的迷恋和占有欲，这段视频也成为了他日后的心魔。
-        '''
-        logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
-        async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions):
-            print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
-        logger.info("\n[生成完成] 初始剧情输出完成")
-    else:
-        logger.info("[跳过] 历史记录非空，未填充初始剧情")
+    # if chat_history.is_empty():
+    AUTO_START_MESSAGE = '''
+**第2章 救赎与诱惑的开端**
+*   **人物**：常亮（留校辅导员）、林洛萱（英语系校花）、吕昊（校内富二代混子）、刘老太（宿管）。
+*   **起因**：常亮救下林洛萱后，帮助她清理身体和心理创伤，但视频的秘密让他内心挣扎，产生更深的占有欲。林洛萱对常亮的感激转为依赖。
+*   **事件过程**：
+    1.  常亮帮林洛萱清洗身体，过程中不经意触碰引发暧昧，她羞涩却未拒绝。
+    2.  林洛萱倾诉被吕昊纠缠的往事，常亮安慰她，分享自己的孤独，情感拉近。
+    3.  次日，常亮用视频威胁吕昊，让他远离林洛萱，但吕昊暗中调查常亮的秘密。
+    4.  林洛萱主动找常亮报恩，邀请他共进晚餐，氛围温馨却暗藏情愫。
+    5.  晚上，常亮独处时回放视频，自慰时幻想与林洛萱的亲密，内心冲突加剧。
+    6.  刘老太察觉宿舍异常，质问常亮，他巧妙回避，但刘老太起疑。
+    7.  林洛萱梦中惊醒，跑到常亮处寻求安慰，两人拥抱，关系升温至纯爱边缘。
+*   **结果**：常亮与林洛萱的关系从救赎转为暧昧，他开始计划如何利用视频保护她，同时压制自己的欲望，但吕昊的反扑隐现，埋下冲突种子。
+    '''
+    logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
+    async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions):
+        print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
+    logger.info("\n[生成完成] 初始剧情输出完成")
+    # else:
+    #     logger.info("[跳过] 历史记录非空，未填充初始剧情")
 
 
 async def main_loop():
@@ -257,11 +246,9 @@ async def main_loop():
             logger.info(f"[人物更新] 当前出场人物: {current_personas}")
             continue
 
-        async for text_chunk in execute_model(model_name, user_input, system_instructions, current_personas):
+        async for text_chunk in execute_model(model_name, user_input, system_instructions):
             print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
         logger.info("\n[生成完成] 模型回复已输出完成 ")
-
-# 参考故事进行续写，续写故事不少于原始故事，给出续写的详细的章节目录，每个续写章节的介绍（必须是包含人物、起因、事件详细过程、结果的客观事实。其中的关键名称、关键话语、关键动作、约定、结论等必须经量详细。）
 
 if __name__ == "__main__":
     asyncio.run(main_loop())
