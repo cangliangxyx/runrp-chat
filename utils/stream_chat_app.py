@@ -85,6 +85,7 @@ def parse_stream_chunk(data_str: str) -> str | None:
 # -----------------------------
 # 流式调用模型（结构化输出 + 异常处理细分）
 # -----------------------------
+
 async def execute_model_for_app(
     model_name: str,
     user_input: str,
@@ -93,6 +94,7 @@ async def execute_model_for_app(
     web_input: str = "",
     nsfw: bool = True,
     stream: bool = False,  # 流式或非流式
+    # image: bool = False,  # ← 新增
 ) -> AsyncGenerator[dict, None]:
     """
     调用模型并返回结果，支持流式和非流式
@@ -117,12 +119,42 @@ async def execute_model_for_app(
 
     # 模型配置
     model_details = model_registry(model_name)
-    client_settings = CLIENT_CONFIGS[model_details["client_name"]]
     payload = {"model": model_details["label"], "stream": stream, "messages": messages}
+    client_settings = CLIENT_CONFIGS[model_details["client_name"]]
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {client_settings['api_key']}"}
 
     chunks = []
     got_done_flag = False
+
+    # -----------------------------
+    # 🎨 图片生成分支
+    # -----------------------------
+    # if image:
+    #     payload = {
+    #         "prompt": user_input,
+    #         "model": model_details.get("image_model", model_details["label"]),  # 允许不同图片模型
+    #     }
+    #     image_url = client_settings["base_url"].replace("/v1/chat/completions", "/v1/images/generations")
+    #
+    #     try:
+    #         async with httpx.AsyncClient(timeout=60) as client:
+    #             response = await client.post(image_url, headers=headers, json=payload)
+    #
+    #         if response.status_code != 200:
+    #             yield {"type": "error", "error": f"图片接口返回非200状态码: {response.status_code}"}
+    #             return
+    #
+    #         data = response.json()
+    #         if "data" in data and isinstance(data["data"], list) and len(data["data"]) > 0:
+    #             img_data = data["data"][0]
+    #             img_url = img_data.get("url") or img_data.get("b64_json")
+    #             yield {"type": "image", "url": img_url}
+    #         else:
+    #             yield {"type": "error", "error": "图片接口返回无效数据"}
+    #
+    #     except Exception as e:
+    #         yield {"type": "error", "error": f"图片生成失败: {e}"}
+    #     return
 
     try:
         async with httpx.AsyncClient(timeout=None) as client:

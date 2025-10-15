@@ -50,6 +50,13 @@ DEFAULT_MODELS = {
         "default_temperature": 0.6,
         "client_name": "google_api",
     },
+    # google_api
+    "nano-banana": {
+        "label": "nano-banana",
+        "supports_streaming": True,
+        "default_temperature": 0.6,
+        "client_name": "nano-banana",
+    },
 }
 
 def model_registry(model_name: str = None):

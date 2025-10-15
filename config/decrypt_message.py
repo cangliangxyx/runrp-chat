@@ -35,7 +35,7 @@ if __name__ == "__main__":
     print("加密后的信息:", encrypted)
 
     # 解密
-    decrypted = decrypt_message("gAAAAABo0QSlhm1yMzos3vV5j0vlSYkc5isv9L6C-z-lGVoaiK33s5-ajcAs3L0TUVaHc2trYzVuCgWrvwuvCuAM_ONG5BlIqeA8hH6joBF_YyhUz9dzd4fIqxFjMxs0LNWZzdoQu6aB")
+    decrypted = decrypt_message("gAAAAABo50kq7Giw4Gr4cbcDJHRoaNZ5OealtpGHcrepgmbRkcsVjB1aPMhIToLXooMIVeBadYV8A33dspd2xDIUqcAOeEmQ7AXPyvKg_GJ1MvnPJo8rcvUWBVVxdQzCU56HeQfd6kyFIbI5bp1B01s4i9J9ddJTzw==")
     print("解密后的信息:", decrypted)
 
     # 验证
