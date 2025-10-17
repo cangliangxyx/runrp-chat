@@ -197,17 +197,17 @@ async def auto_fill_initial_story(model_name, system_instructions, current_perso
     """仅在历史记录为空时填充初始剧情"""
     if chat_history.is_empty():
         AUTO_START_MESSAGE = '''
-        冰冷的雨水无情地敲打着瀛洲市的柏油路面，霓虹灯的光晕在积水中化开，显得既绚烂又疏离。
-        你就这样撑着伞，在街角遇见了她。
-        丰满的乳房和翘臀，腰肢却细得让人心惊。盈盈一握这个词用在她身上都显得保守，那几乎是一种非人类的纤细，仿佛造物主最偏心的杰作。谁能拒绝一个巨乳萝莉般的诱惑？
-        安清雪，那个曾经在财经杂志上出现过的名字，此刻却像一只被遗弃的湿漉漉的小猫，蜷缩在冰冷的墙角。她身上那件曾经名贵的连衣裙早已被雨水和污渍弄得不成样子，乌黑的长发紧贴着苍白的脸颊，嘴唇冻得发紫，整个人都在不住地颤抖。
-        你的脚步停在了她的面前。
-        她似乎察觉到了阴影，缓缓抬起头。那是一张即使在如此狼狈的情况下，依然美得惊心动魄的脸。她的眼神空洞，但在看清你的瞬间，那死寂的眼眸里猛地爆发出了一丝求生的星光。
-        她扶着墙，用尽全身力气站了起来，踉跄地向你走近一步，声音沙哑而急切：
-        “您……等，等一下。”
-        她深吸一口气，雨水顺着她的下颌滴落，仿佛用尽了一生的勇气，对着你大声喊道：
-        “只要您给我饭吃，我就跟您走，让我干什么都行！我……我会洗衣做饭，天冷了还能……还能帮您暖床……只要……只要给我口饭吃就行！”
-        她的话语在雨声中显得那么微弱又那么决绝。她紧紧攥着衣角，用一种混合着恐惧、羞耻和孤注一掷的眼神，死死地盯着你，等待着你的审判。
+#### **第1章 我看到校花林洛萱被强奸**
+*   **人物**：常亮（留校辅导员）、林洛萱（英语系校花）、吕昊（校内富二代混子）。
+*   **起因**：常亮在暑假护校期间，利用职务之便获得了一栋无人空楼的钥匙，并发现这里是偷窥对面女生宿舍的最佳地点。他对校花林洛萱抱有强烈的窥探欲。
+*   **事件过程**：
+    1.  常亮进入空楼，用手机摄像头对准林洛萱的宿舍窗口进行偷窥。
+    2.  他看到校内混子吕昊进入了林洛萱的宿舍，并反锁了门。吕昊对林洛萱动手动脚，并在激烈的争辩后，强行与她发生了关系。
+    3.  林洛萱宿舍关灯后，常亮意识到将发生大事，迅速离开空楼，企图爬进林洛萱宿舍的阳台，但因楼下有水沟而失败。
+    4.  他用万能钥匙打开林洛萱隔壁的空宿舍，成功翻到林洛萱宿舍的阳台上进行偷窥。
+    5.  在月光下，他目睹了吕昊对林洛萱施暴的全过程：吕昊将林洛萱的腿用丝袜绑在床栏上摆出一字马造型进行强奸；强迫林洛萱称呼他为“主人”；用自己的内裤塞住林洛萱的嘴；采用各种高难度姿势对她进行长时间的、粗暴的奸淫，直至林洛萱被操得高潮迭起、多次潮吹甚至昏厥。
+    6.  实在忍不住常亮冲了进去，制止吕昊的后续行为
+*   **结果**：常亮用手机录下了部分吕昊强奸林洛萱的视频。用此来威胁吕昊不让他在缠着林洛萱，但是常亮也对林洛萱产生了强烈的迷恋和占有欲，这段视频也成为了他日后的心魔。
         '''
         logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
         async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions, current_personas):
@@ -221,14 +221,22 @@ async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
     # system_instructions = get_system_prompt("安清雪")     # 获取默认配置文件
-    system_instructions = get_system_prompt("真实现实恋爱模拟器")     # 获取默认配置文件
+    system_instructions = get_system_prompt("book")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
 
     # 只有历史记录为空才填充初始剧情
     await auto_fill_initial_story(model_name, system_instructions, current_personas)
 
     while True:
-        user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
+        # user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
+        print("\n请输入内容（多行输入，输入单独一行 END 结束，命令: {clear}, {history}, {switch}, {personas}）:")
+        lines = []
+        while True:
+            line = input()
+            if line.strip() == "END":  # 输入 END 表示结束
+                break
+            lines.append(line)
+        user_input = "\n".join(lines).strip()
         if user_input == "{clear}":
             chat_history.clear_history()
             logger.info("[操作] 历史记录已清空")
