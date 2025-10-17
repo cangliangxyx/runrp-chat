@@ -30,8 +30,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # -----------------------------
 chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
 MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
-SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
-# SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
+# SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
 
 
 # -----------------------------
@@ -229,14 +229,24 @@ async def main_loop():
 
     while True:
         # user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
-        print("\n请输入内容（多行输入，输入单独一行 END 结束，命令: {clear}, {history}, {switch}, {personas}）:")
+        print("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}):")
         lines = []
+        empty_line_count = 0
         while True:
             line = input()
-            if line.strip() == "END":  # 输入 END 表示结束
+            # 检测 END 结束符
+            if line.strip() == "END":
                 break
+            # 检测连续两次空行结束
+            if line.strip() == "":
+                empty_line_count += 1
+                if empty_line_count >= 2:
+                    break
+            else:
+                empty_line_count = 0  # 重置计数器
             lines.append(line)
         user_input = "\n".join(lines).strip()
+        # 特殊指令
         if user_input == "{clear}":
             chat_history.clear_history()
             logger.info("[操作] 历史记录已清空")
