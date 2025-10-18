@@ -67,9 +67,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // 获取表单元素
     const chatForm = document.getElementById('chat-form');
     const promptBox = document.getElementById('prompt');
-    // 按历史内容继续故事
-    document.getElementById('continue-btn').addEventListener('click', function() {
-    promptBox.value = "参考历史内容继续故事";
+    // 主线故事
+    document.getElementById('continue-main-btn').addEventListener('click', function() {
+    promptBox.value = "继续推进主线故事";
+    chatForm.requestSubmit(); // 直接提交表单
+    });
+    // 温馨剧情
+    document.getElementById('continue-con-btn').addEventListener('click', function() {
+    promptBox.value = "参考历史内容续温馨情节";
     chatForm.requestSubmit(); // 直接提交表单
     });
     // 按历史内容续写暧昧情节
@@ -79,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     // 按历史内容续写欲望情节
     document.getElementById('continue-desire-btn').addEventListener('click', function() {
-    promptBox.value = "参考历史内容续写欲望情节";
+    promptBox.value = "参考历史内容续写性爱情节";
     chatForm.requestSubmit(); // 直接提交表单
     });
     // 安清雪
