@@ -43,6 +43,13 @@ DEFAULT_MODELS = {
         "default_temperature": 0.6,
         "client_name": "deepseek",
     },
+    # deepseek-chat / deepseek-reasoner
+    "deepseek-reasoner": {
+        "label": "deepseek-reasoner",
+        "supports_streaming": True,
+        "default_temperature": 0.8,
+        "client_name": "deepseek",
+    },
     # google_api
     "google_api": {
         "label": "gemini-2.5-flash",
