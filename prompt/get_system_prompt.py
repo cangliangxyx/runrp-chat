@@ -3,16 +3,16 @@
 from pathlib import Path
 
 PROMPT_FILES = {
+    "book": "book.md",
+    "Prompt": "system_prompt_def.md",
     "developer":"system_prompt_developer.md",
     "真实现实恋爱模拟器": "system_prompt_01.md",
     "安清雪": "system_prompt_02.md",
     "女神反转系统": "system_prompt_03.md",
-    "写作助手": "system_prompt_04.md",
-    "default": "system_prompt_def.md",
     "test": "system_prompt_test.md",
     "nsfw": "system_prompt_nsfw.md",
     "temp": "temp.md",
-    "book": "book.md",
+    "空": "system_prompt_04.md",
 }
 
 PROMPT_CACHE = {}
