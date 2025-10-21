@@ -256,6 +256,5 @@ async def main_loop():
             print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
         logger.info("\n[生成完成] 模型回复已输出完成 ")
 
-
 if __name__ == "__main__":
     asyncio.run(main_loop())
