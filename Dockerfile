@@ -1,28 +1,37 @@
 # Dockerfile
 
-FROM python:3.12-slim
+FROM python:3.13-slim
 
-# 安装依赖，包括 libc6 兼容库
-RUN apt-get update
-RUN apt-get install -y libc6
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists/*1
+# 安装系统依赖
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libc6 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# 创建项目目录并设置为工作目录
-RUN mkdir /opt/project
+# 设置工作目录
 WORKDIR /opt/project
-#
-# 将本地代码复制到容器
+
+# 先复制依赖文件（利用 Docker 缓存）
+COPY requirements.txt /opt/project/
+
+# 安装 Python 依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制项目代码
 COPY ./ /opt/project
-# 设置环境变量，指定 oc 所在路径
-ENV PATH="/opt/project/bin:${PATH}"
-ENV KUBECONFIG=/opt/project/kube/config
 
-# 安装依赖
-RUN pip install -r requirements.txt
+# 设置环境变量
+ENV PATH="/opt/project/bin:${PATH}" \
+    KUBECONFIG=/opt/project/kube/config
 
-# 暴露 Flask 默认端口
+# 创建非 root 用户并切换
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /opt/project
+
+USER appuser
+
+# 暴露端口
 EXPOSE 8080
 
-# 指定容器启动时执行的命令
+# 启动命令
 CMD ["/bin/sh", "/opt/project/run.sh"]
