@@ -8,8 +8,8 @@ from prompt.get_system_prompt import get_system_prompt
 # 配置部分
 # -----------------------------
 # MODEL_NAME = "huihui_ai/deepseek-r1-abliterated:8b" qwen3:4b
-# MODEL_NAME = "gemma3:1b"
-MODEL_NAME = "qwen3:4b"
+MODEL_NAME = "gemma3:1b"
+# MODEL_NAME = "qwen3:4b"
 API_URL = "http://localhost:11434/v1/chat/completions"
 
 # -----------------------------
