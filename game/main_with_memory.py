@@ -3,23 +3,26 @@ import json
 import requests
 from datetime import datetime
 from prompt.get_system_prompt import get_system_prompt
+from engine.memory_manager import MemoryManager
 
 # -----------------------------
-# 配置部分
+# 模型配置
 # -----------------------------
-# MODEL_NAME = "huihui_ai/deepseek-r1-abliterated:8b" qwen3:4b
-# MODEL_NAME = "gemma3:1b"
-MODEL_NAME = "qwen3:4b"
+MODEL_NAME = "gemma3:1b"
 API_URL = "http://localhost:11434/v1/chat/completions"
+LOG_DIR = "game"
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# 初始化记忆系统
+memory = MemoryManager(db_path="data/memory_db")
 
 # -----------------------------
-# 调用本地模型函数
+# 调用模型函数
 # -----------------------------
-
 def call_model(messages, stream=False):
     """
     调用本地模型，支持流式输出。
-    stream=True 时，使用生成器 yield 实时返回 chunk。
+    stream=True 时使用生成器逐步返回。
     """
     payload = {
         "model": MODEL_NAME,
@@ -41,21 +44,20 @@ def call_model(messages, stream=False):
                     decoded = line.decode("utf-8").strip()
                     if not decoded.startswith("data:"):
                         continue
-                    data_str = decoded[len("data:"):].strip()  # 去掉前缀
+                    data_str = decoded[len("data:"):].strip()
                     if data_str == "[DONE]":
                         break
+
                     try:
                         j = json.loads(data_str)
                         content = ""
-
-                        # OpenAI 风格
                         choice = j.get("choices", [{}])[0]
                         if "delta" in choice:
                             content = choice["delta"].get("content") or ""
                         elif "message" in choice:
                             content = choice["message"].get("content") or ""
 
-                        # Gemini 风格
+                        # Gemini 风格兼容
                         if not content and "candidates" in j:
                             parts = j["candidates"][0].get("content", {}).get("parts", [])
                             content = "".join(p.get("text", "") for p in parts if "text" in p)
@@ -70,9 +72,7 @@ def call_model(messages, stream=False):
 
         except Exception as e:
             print("[流式调用错误]", e)
-
         print("\n[流结束]")
-
 
     else:
         try:
@@ -87,31 +87,46 @@ def call_model(messages, stream=False):
             return ""
 
 
+# -----------------------------
+# 主程序
+# -----------------------------
 def main():
-    # system_instructions = get_system_prompt("book")  # 获取默认系统 prompt
-    system_instructions = "你是一个对话助手"
+    system_instructions = get_system_prompt("romance")
+    # system_instructions = "你是一个具备记忆功能的对话助手，能够回忆之前的故事片段。"
     messages = [{"role": "system", "content": system_instructions}]
 
-    print("=== 本地模型调试工具 ===")
-    print("输入 'exit' 或 'quit' 退出\n")
+    print("=== 带记忆的模型调试工具 ===")
+    print("输入 'exit' 退出\n")
 
     while True:
         user_input = input("用户: ").strip()
         if user_input.lower() in ["exit", "quit"]:
             break
-        messages.append({"role": "user", "content": user_input})
+
+        # 🔹 从记忆中检索相关内容
+        related_context = memory.query_memory(user_input, top_k=3)
+        if related_context:
+            context_text = "\n".join(related_context)
+            full_prompt = f"以下是你之前的记忆：\n{context_text}\n\n现在用户说：{user_input}"
+        else:
+            full_prompt = user_input
+
+        # 构造消息序列
+        messages.append({"role": "user", "content": full_prompt})
+
         try:
             full_output = ""
-            # 使用生成器逐块处理流式输出
             for chunk in call_model(messages, stream=True):
-                full_output += chunk  # 拼接完整文本
+                full_output += chunk
             print("\n[模型输出完毕]")
-            # 保存模型输出到消息历史
+
+            # 🔹 保存对话到历史与记忆库
             messages.append({"role": "assistant", "content": full_output})
+            memory.add_memory(f"用户：{user_input}\n模型：{full_output}")
+
         except Exception as e:
             print("[调用模型出错]", e)
 
 
 if __name__ == "__main__":
     main()
-

@@ -1,4 +1,4 @@
-# config.py
+# prompt.py
 from config.decrypt_message import decrypt_message
 
 CLIENT_CONFIGS = {
