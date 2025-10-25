@@ -106,7 +106,6 @@ def main():
         if user_input.lower() in ["exit", "quit"]:
             break
 
-        # 🔹 从记忆中检索相关内容
         related_context = memory.query_memory(user_input, top_k=3)
         if related_context:
             context_text = "\n".join(related_context)
@@ -123,7 +122,6 @@ def main():
                 full_output += chunk
             print("\n[模型输出完毕]")
 
-            # 🔹 保存对话到历史与记忆库
             messages.append({"role": "assistant", "content": full_output})
             memory.add_memory(f"用户：{user_input}\n模型：{full_output}")
             print("memory.add_memory = ", memory.add_memory(f"用户：{user_input}\n模型：{full_output}"))
