@@ -8,13 +8,16 @@ from engine.memory_manager import MemoryManager
 # -----------------------------
 # 模型配置
 # -----------------------------
-MODEL_NAME = "gemma3:1b"
+# MODEL_NAME = "gemma3:1b"
+MODEL_NAME = "qwen3:4b"
+# MODEL_NAME = "huihui_ai/deepseek-r1-abliterated:8b"
 API_URL = "http://localhost:11434/v1/chat/completions"
-LOG_DIR = "game"
-os.makedirs(LOG_DIR, exist_ok=True)
 
 # 初始化记忆系统
-memory = MemoryManager(db_path="data/memory_db")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+db_path = os.path.join(BASE_DIR, "game/data", "memory_db")
+memory = MemoryManager(db_path=db_path, collection_name="story_memory")
+# memory = MemoryManager(db_path="data/memory_db")
 
 # -----------------------------
 # 调用模型函数
@@ -28,7 +31,7 @@ def call_model(messages, stream=False):
         "model": MODEL_NAME,
         "messages": messages,
         "temperature": 0.7,
-        "max_tokens": 500,
+        "max_tokens": 50000,
         "stream": stream
     }
 
@@ -91,7 +94,7 @@ def call_model(messages, stream=False):
 # 主程序
 # -----------------------------
 def main():
-    system_instructions = get_system_prompt("romance")
+    system_instructions = get_system_prompt("survival")
     # system_instructions = "你是一个具备记忆功能的对话助手，能够回忆之前的故事片段。"
     messages = [{"role": "system", "content": system_instructions}]
 
@@ -123,6 +126,7 @@ def main():
             # 🔹 保存对话到历史与记忆库
             messages.append({"role": "assistant", "content": full_output})
             memory.add_memory(f"用户：{user_input}\n模型：{full_output}")
+            print("memory.add_memory = ", memory.add_memory(f"用户：{user_input}\n模型：{full_output}"))
 
         except Exception as e:
             print("[调用模型出错]", e)

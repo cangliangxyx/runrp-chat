@@ -47,33 +47,25 @@ def call_model(messages, stream=False):
                     try:
                         j = json.loads(data_str)
                         content = ""
-
                         # OpenAI 风格
                         choice = j.get("choices", [{}])[0]
                         if "delta" in choice:
                             content = choice["delta"].get("content") or ""
                         elif "message" in choice:
                             content = choice["message"].get("content") or ""
-
                         # Gemini 风格
                         if not content and "candidates" in j:
                             parts = j["candidates"][0].get("content", {}).get("parts", [])
                             content = "".join(p.get("text", "") for p in parts if "text" in p)
-
                         if content:
                             print(content, end="", flush=True)
                             full_output += content
                             yield content
-
                     except json.JSONDecodeError:
                         continue
-
         except Exception as e:
             print("[流式调用错误]", e)
-
         print("\n[流结束]")
-
-
     else:
         try:
             r = requests.post(API_URL, json=payload, timeout=30)
@@ -88,8 +80,8 @@ def call_model(messages, stream=False):
 
 
 def main():
-    # system_instructions = get_system_prompt("book")  # 获取默认系统 prompt
-    system_instructions = "你是一个对话助手"
+    system_instructions = get_system_prompt("book")  # 获取默认系统 prompt
+    # system_instructions = "你是一个对话助手"
     messages = [{"role": "system", "content": system_instructions}]
 
     print("=== 本地模型调试工具 ===")
@@ -102,11 +94,9 @@ def main():
         messages.append({"role": "user", "content": user_input})
         try:
             full_output = ""
-            # 使用生成器逐块处理流式输出
             for chunk in call_model(messages, stream=True):
                 full_output += chunk  # 拼接完整文本
             print("\n[模型输出完毕]")
-            # 保存模型输出到消息历史
             messages.append({"role": "assistant", "content": full_output})
         except Exception as e:
             print("[调用模型出错]", e)
