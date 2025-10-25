@@ -1,15 +1,17 @@
 # app.py
-import logging, json
+import json
+import logging
+
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from config.models import list_model_ids
+from prompt.get_system_prompt import PROMPT_FILES
 from prompt.get_system_prompt import get_system_prompt
 from utils.persona_loader import list_personas, get_default_personas
 from utils.stream_chat_app import execute_model_for_app, chat_history
-from prompt.get_system_prompt import PROMPT_FILES
 
 # -----------------------------
 # 日志配置

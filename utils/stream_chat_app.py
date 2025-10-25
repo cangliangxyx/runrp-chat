@@ -1,11 +1,12 @@
 # prompt/stream_chat_app.py
 
+import asyncio
 import json
 import logging
 from typing import AsyncGenerator
-from colorama import init
+
 import httpx
-import asyncio
+from colorama import init
 
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry

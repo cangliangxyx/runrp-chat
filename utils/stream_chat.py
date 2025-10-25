@@ -1,20 +1,20 @@
 # prompt/stream_chat.py
 
-import json
 import asyncio
-
-import httpx
+import json
 import logging
 from typing import AsyncGenerator
+
+import httpx
 from colorama import init, Fore
+
 from config.config import CLIENT_CONFIGS
 from config.models import model_registry, list_model_ids
-from utils.chat_history import ChatHistory
 from prompt.get_system_prompt import get_system_prompt
-from utils.persona_loader import select_personas, get_default_personas
+from utils.chat_history import ChatHistory
 from utils.message_builder import build_messages
+from utils.persona_loader import select_personas, get_default_personas
 from utils.print_messages_colored import print_messages_colored, print_model_output_colored
-
 
 # 初始化颜色输出
 init(autoreset=True)

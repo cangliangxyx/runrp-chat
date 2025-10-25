@@ -1,11 +1,11 @@
 # utils/chat_history.py
 
 import json
-import re
-from pathlib import Path
-from datetime import datetime
-from typing import List, Dict, Any, Optional
 import logging
+import re
+from datetime import datetime
+from pathlib import Path
+from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 

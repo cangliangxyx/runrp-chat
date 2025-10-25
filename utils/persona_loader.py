@@ -1,10 +1,9 @@
 # utils/persona_loader.py
 
 import json
+import logging
 from pathlib import Path
 from typing import Dict, Any, List
-import logging
-import asyncio
 
 # 日志配置
 logger = logging.getLogger(__name__)

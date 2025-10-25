@@ -1,5 +1,7 @@
 import os
+
 from cryptography.fernet import Fernet
+
 
 # 读取密钥
 def load_key():
