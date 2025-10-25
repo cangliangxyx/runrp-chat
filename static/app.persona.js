@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         opt.textContent = rule;
         select.appendChild(opt);
       });
-      if (data.rules.includes("developer")) select.value = "developer";
+      if (data.rules.includes("book")) select.value = "book";
     })
     .catch(err => console.error("加载 system_rules 失败:", err));
 
