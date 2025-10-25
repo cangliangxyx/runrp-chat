@@ -124,7 +124,7 @@ async def update_personas(selected: str = Form(...)):
 # -----------------------------
 @app.post("/reload_history")
 async def reload_history():
-    """重新从文件加载最新的聊天记录"""
+    """重新从文件加载最新聊天记录"""
     try:
         chat_history.reload()
         logger.info("[操作] 历史记录已从文件重新加载 (来自 Web)")
