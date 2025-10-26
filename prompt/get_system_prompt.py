@@ -3,6 +3,7 @@ from pathlib import Path
 
 PROMPT_FILES = {
     "book": "book.md",
+    "book_v6": "book_v6.md",
     "prompt": "system_prompt_def.md",
     "developer":"system_prompt_developer.md",
     "真实现实恋爱模拟器": "system_prompt_01.md",
