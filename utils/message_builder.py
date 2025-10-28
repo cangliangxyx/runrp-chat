@@ -4,10 +4,12 @@ from utils.persona_loader import load_persona
 
 # MAX_HISTORY_ENTRIES = 1  # 最近几条对话传给模型
 
-def append_personas_to_messages(messages: list[dict], personas: list[str]) -> None:
+def append_personas_to_messages(messages: list[dict], personas: list[str] | None) -> None:
     """
     将指定角色信息加载到 messages 中（作为 system message）
     """
+    if not personas:
+        return
     persona_info = "玩家角色: 常亮\n"
     for name in personas:
         try:
@@ -20,7 +22,7 @@ def append_personas_to_messages(messages: list[dict], personas: list[str]) -> No
     messages.append({"role": "system", "content": f"人物信息(不需要在正文输出):\n{persona_info}"})
 
 
-def build_messages(system_instructions: str, personas: list[str], chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10,optional_message: str = None ):
+def build_messages(system_instructions: str, personas: list[str] | None, chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10,optional_message: str = None ):
     """
     构建 messages 列表，供模型调用
     Args:
@@ -57,7 +59,7 @@ def build_messages(system_instructions: str, personas: list[str], chat_history, 
             # 将历史摘要整理成一段清晰说明
             summary_text = "\n".join(assistant_texts)
             summary_content = (
-                "以下是之前的故事进展和角色状态：\n"
+                "以下是历史信息：\n"
                 f"{summary_text}\n"
                 "##"
             )
