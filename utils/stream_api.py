@@ -28,8 +28,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # 全局变量
 # -----------------------------
 chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
-MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
-# SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+MAX_HISTORY_ENTRIES = 5                     # 最近几条对话传给模型
 SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
 
 
@@ -84,7 +83,7 @@ async def execute_model(
     model_name: str,
     user_input: str,
     system_instructions: str,
-    stream: bool = False,  # 新增参数，默认流式
+    stream: bool = False,  # 新增参数，默认流式 false 非流
 ) -> AsyncGenerator[str, None]:
     model_details = model_registry(model_name)
     client_key = model_details["client_name"]
@@ -94,7 +93,6 @@ async def execute_model(
 
     messages = [
         {"role": "system", "content": system_instructions},
-        # {"role": "assistant", "content": f"以下是之前的故事进展：{summary_content}"},
         {"role": "user", "content": f"用户输入内容：{user_input}"},
     ]
 
@@ -194,42 +192,30 @@ async def select_model() -> str:
 # -----------------------------
 # 主循环
 # -----------------------------
-async def auto_fill_initial_story(model_name, system_instructions):
-    """仅在历史记录为空时填充初始剧情"""
-    # if chat_history.is_empty():
-    AUTO_START_MESSAGE = '''
-**第2章 救赎与诱惑的开端**
-*   **人物**：常亮（留校辅导员）、林洛萱（英语系校花）、吕昊（校内富二代混子）、刘老太（宿管）。
-*   **起因**：常亮救下林洛萱后，帮助她清理身体和心理创伤，但视频的秘密让他内心挣扎，产生更深的占有欲。林洛萱对常亮的感激转为依赖。
-*   **事件过程**：
-    1.  常亮帮林洛萱清洗身体，过程中不经意触碰引发暧昧，她羞涩却未拒绝。
-    2.  林洛萱倾诉被吕昊纠缠的往事，常亮安慰她，分享自己的孤独，情感拉近。
-    3.  次日，常亮用视频威胁吕昊，让他远离林洛萱，但吕昊暗中调查常亮的秘密。
-    4.  林洛萱主动找常亮报恩，邀请他共进晚餐，氛围温馨却暗藏情愫。
-    5.  晚上，常亮独处时回放视频，自慰时幻想与林洛萱的亲密，内心冲突加剧。
-    6.  刘老太察觉宿舍异常，质问常亮，他巧妙回避，但刘老太起疑。
-    7.  林洛萱梦中惊醒，跑到常亮处寻求安慰，两人拥抱，关系升温至纯爱边缘。
-*   **结果**：常亮与林洛萱的关系从救赎转为暧昧，他开始计划如何利用视频保护她，同时压制自己的欲望，但吕昊的反扑隐现，埋下冲突种子。
-    '''
-    logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
-    async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions):
-        print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
-    logger.info("\n[生成完成] 初始剧情输出完成")
-    # else:
-    #     logger.info("[跳过] 历史记录非空，未填充初始剧情")
-
-
 async def main_loop():
-    current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
-    system_instructions = get_system_prompt("book")     # 获取默认配置文件
-    logger.info(f"[默认出场人物] {current_personas}")
-
-    # 只有历史记录为空才填充初始剧情
-    await auto_fill_initial_story(model_name, system_instructions)
+    system_instructions = get_system_prompt("prompt")     # 获取默认配置文件
 
     while True:
-        user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
+        # user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
+        print("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}):")
+        lines = []
+        empty_line_count = 0
+        while True:
+            line = input()
+            # 检测 END 结束符
+            if line.strip() == "END":
+                break
+            # 检测连续两次空行结束
+            if line.strip() == "":
+                empty_line_count += 1
+                if empty_line_count >= 2:
+                    break
+            else:
+                empty_line_count = 0  # 重置计数器
+            lines.append(line)
+        user_input = "\n".join(lines).strip()
+        # 特殊指令
         if user_input == "{clear}":
             chat_history.clear_history()
             logger.info("[操作] 历史记录已清空")
@@ -240,14 +226,9 @@ async def main_loop():
         if user_input.startswith("{switch}"):
             model_name = await select_model()
             continue
-        if user_input.startswith("{personas}"):
-            current_personas = await select_personas()
-            logger.info(f"[人物更新] 当前出场人物: {current_personas}")
-            continue
 
         async for text_chunk in execute_model(model_name, user_input, system_instructions):
             print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
         logger.info("\n[生成完成] 模型回复已输出完成 ")
-
 if __name__ == "__main__":
     asyncio.run(main_loop())
