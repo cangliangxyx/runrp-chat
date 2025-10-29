@@ -17,18 +17,18 @@ COPY requirements.txt /opt/project/
 # 安装 Python 依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制项目代码
-COPY ./ /opt/project
-
 # 设置环境变量
 ENV PATH="/opt/project/bin:${PATH}" \
     KUBECONFIG=/opt/project/kube/config
 
-# 创建非 root 用户并切换
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /opt/project
+COPY . /opt/project
+USER root
 
-USER appuser
+# 创建非 root 用户并切换
+#RUN useradd -m -u 1000 appuser && \
+#    chown -R appuser:appuser /opt/project
+#COPY . /opt/project
+#USER appuser
 
 # 暴露端口
 EXPOSE 8080
