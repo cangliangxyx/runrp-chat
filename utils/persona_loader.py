@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 # 人物配置文件路径
-PERSONA_FILE = Path(__file__).parent.parent / "config" / "persona.json"
+PERSONA_FILE = Path(__file__).parent.parent / "prompt" / "persona.json"
 
 # 主角名字
 DEFAULT_USER_NAME = "常亮"
