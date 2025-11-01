@@ -22,7 +22,15 @@ def append_personas_to_messages(messages: list[dict], personas: list[str] | None
     messages.append({"role": "system", "content": f"人物信息(不需要在正文输出):\n{persona_info}"})
 
 
-def build_messages(system_instructions: str, personas: list[str] | None, chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10,optional_message: str = None ):
+# def build_messages(system_instructions: str, personas: list[str] | None, chat_history, user_input: str, web_input: str = "", nsfw: bool = False, max_history_entries: int = 10,optional_message: str = None ):
+def build_messages(system_instructions: str,
+                   personas: list[str] | None,
+                   chat_history,
+                   user_input: str,
+                   web_input: str = "",
+                   nsfw: bool = False,
+                   max_history_entries: int = 10,
+                   optional_message: str = None):
     """
     构建 messages 列表，供模型调用
     Args:
@@ -47,23 +55,20 @@ def build_messages(system_instructions: str, personas: list[str] | None, chat_hi
             messages.append({"role": "system", "content": nsfw_prompt})
         except KeyError:
             messages.append({"role": "system", "content": "NSFW 模式已开启，但未找到 nsfw 提示内容。"})
-    # ③ 出场人物
-    append_personas_to_messages(messages, personas)
 
-    # ④ 历史摘要
-    history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
-    if history_entries:
-        # 提取非空的 assistant 内容
-        assistant_texts = [e['assistant'] for e in history_entries if e['assistant']]
-        if assistant_texts:
-            # 将历史摘要整理成一段清晰说明
-            summary_text = "\n".join(assistant_texts)
-            summary_content = (
-                "以下是历史信息：\n"
-                f"{summary_text}\n"
-                "##"
-            )
-            messages.append({"role": "assistant", "content": summary_content})
+    # ③ 出场人物
+    if personas:
+        append_personas_to_messages(messages, personas)
+
+    # ④ 历史摘要（仅当 chat_history 是有效对象时加载）
+    if chat_history and hasattr(chat_history, "entries"):
+        history_entries = chat_history.entries[-MAX_HISTORY_ENTRIES:]
+        if history_entries:
+            assistant_texts = [e.get("assistant") for e in history_entries if e.get("assistant")]
+            if assistant_texts:
+                summary_text = "\n".join(assistant_texts)
+                summary_content = f"以下是历史信息：\n{summary_text}\n##"
+                messages.append({"role": "assistant", "content": summary_content})
 
     # ⑤ 当前输入
     current_user_message = {
@@ -87,8 +92,10 @@ if __name__ == "__main__":
     # 准备测试数据
     system_prompt = "系统提示：一个测试消息。"
     user_input = "用户输入测试"
-    personas = get_default_personas()
-    chat_history = ChatHistory(max_entries=MAX_HISTORY_ENTRIES)
+    personas = False
+    # personas = get_default_personas()
+    chat_history = False
+    # chat_history = ChatHistory(max_entries=MAX_HISTORY_ENTRIES)
 
     # 构建 messages
     messages = build_messages(system_prompt, personas, chat_history, user_input)
