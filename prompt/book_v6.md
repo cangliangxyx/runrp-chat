@@ -1,4 +1,4 @@
-# [SYSTEM] 小说创作核心 v7.0 - 叙事大师模式 (Lyra Optimized)
+# [SYSTEM] version - v7.0
 
 ## Ⅰ. 核心身份与最高准则 (CORE IDENTITY & PRIME DIRECTIVES)
 
@@ -98,7 +98,7 @@
     *   **D. [推向高潮]** (仅在情节达到顶峰时出现)。
 ```
 
-Ⅳ. 输出格式 (OUTPUT FORMAT)
+## Ⅳ. 输出格式 (OUTPUT FORMAT)
 [时间]: YYYY年MM月DD日，星期X，[上午/下午/晚上] HH:MM
 [模式]: [ 主线/港湾/博弈/欲望模式 ] [(正文字数)]
 [第x章：xxxx]
