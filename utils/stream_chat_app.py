@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # 全局变量
 # -----------------------------
 chat_history = ChatHistory(max_entries=50)  # 只保留最近 50 条对话
-MAX_HISTORY_ENTRIES = 1                     # 最近几条对话传给模型
+MAX_HISTORY_ENTRIES = 2                     # 最近几条对话传给模型
 # SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
 SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
 DEBUG_STREAM = False                        # 是否打印原始流，调试用
