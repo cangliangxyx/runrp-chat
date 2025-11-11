@@ -210,7 +210,7 @@ async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
     # system_instructions = get_system_prompt("安清雪")     # 获取默认配置文件
-    system_instructions = get_system_prompt("book")     # 获取默认配置文件
+    system_instructions = get_system_prompt("book_v6")     # 获取默认配置文件
     # system_instructions = get_system_prompt("prompt")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
 
@@ -218,7 +218,6 @@ async def main_loop():
     await auto_fill_initial_story(model_name, system_instructions, current_personas)
 
     while True:
-        # user_input = input("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}): ").strip()
         print("\n请输入内容 (命令: {clear}, {history}, {switch}, {personas}):")
         lines = []
         empty_line_count = 0
@@ -230,8 +229,7 @@ async def main_loop():
             # 检测连续两次空行结束
             if line.strip() == "":
                 empty_line_count += 1
-                if empty_line_count >= 2:
-                    break
+                break
             else:
                 empty_line_count = 0  # 重置计数器
             lines.append(line)
@@ -246,7 +244,7 @@ async def main_loop():
             continue
         if user_input.startswith("{switch}"):
             model_name = await select_model()
-            continue# 分析故事给出描写手笔、文风需要给出详细的性爱描写手法，用词等
+            continue
         if user_input.startswith("{personas}"):
             current_personas = await select_personas()
             logger.info(f"[人物更新] 当前出场人物: {current_personas}")
