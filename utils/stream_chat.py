@@ -197,7 +197,7 @@ async def select_model() -> str:
 async def auto_fill_initial_story(model_name, system_instructions, current_personas):
     """仅在历史记录为空时填充初始剧情"""
     if chat_history.is_empty():
-        AUTO_START_MESSAGE = '''开始新故事'''
+        AUTO_START_MESSAGE = '''我是双子座的，有一天和一个金牛座的女生“云朵”在网上认识，她的性格很单纯，有个2岁的小孩'''
         logger.info(f"[自动输入] {AUTO_START_MESSAGE}")
         async for text_chunk in execute_model(model_name, AUTO_START_MESSAGE, system_instructions, current_personas):
             print_model_output_colored(text_chunk, color=Fore.LIGHTBLACK_EX)
@@ -210,7 +210,8 @@ async def main_loop():
     current_personas = get_default_personas()           # 人物加载
     model_name = await select_model()                   # 模型选择
     # system_instructions = get_system_prompt("安清雪")     # 获取默认配置文件
-    system_instructions = get_system_prompt("book_v6")     # 获取默认配置文件
+    # system_instructions = get_system_prompt("book_v6")     # 获取默认配置文件
+    system_instructions = get_system_prompt("test")     # 获取默认配置文件
     # system_instructions = get_system_prompt("prompt")     # 获取默认配置文件
     logger.info(f"[默认出场人物] {current_personas}")
 
