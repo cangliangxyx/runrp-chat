@@ -19,7 +19,7 @@ PROMPT_FILES = {
 PROMPT_CACHE = {}
 
 def get_system_prompt(name: str) -> str:
-    """根据名称获取系统 prompt，不存在则返回 default"""
+    """根据名称获取系统 prompt，不存在则返回 default """
     filename = PROMPT_FILES.get(name, PROMPT_FILES["book"])
     file_path = Path(__file__).parent / filename
     try:
