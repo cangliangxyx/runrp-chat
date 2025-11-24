@@ -17,7 +17,8 @@ from utils.print_messages_colored import print_messages_colored, print_model_out
 init(autoreset=True)
 chat_history = ChatHistory(max_entries=50)
 MAX_HISTORY_ENTRIES = 5
-SAVE_SUMMARY_ONLY = False   # 是否仅保存摘要
+# SAVE_STORY_SUMMARY_ONLY = True              # 只保存摘要，避免文件太大
+SAVE_STORY_SUMMARY_ONLY = False               # 保存所有内容
 # =========================
 # 日志设定
 # =========================
