@@ -1,4 +1,5 @@
 # Dockerfile
+# docker build -t reg.runrp.com:5000/test_game:latest --platform linux/amd64 .
 
 FROM python:3.13-slim
 
