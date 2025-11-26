@@ -24,8 +24,8 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    "grok-4-fast-non-reasoning": {
-        "label": "grok-4-fast-non-reasoning",       # $0.02/次（default）
+    "grok-4.1": {
+        "label": "grok-4.1",       # $0.02/次（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
