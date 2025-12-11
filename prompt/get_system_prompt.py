@@ -5,15 +5,14 @@ PROMPT_FILES = {
     "book": "book.md",
     "book_v6": "book_v6.md",
     "book_v7": "book_v7.md",
-    "prompt": "system_prompt_def.md",
-    "developer":"system_prompt_developer.md",
+    "提示词助手": "system_prompt_assist.md",
     "真实现实恋爱模拟器": "system_prompt_01.md",
     "安清雪": "system_prompt_02.md",
     "女神反转系统": "system_prompt_03.md",
-    "test": "system_prompt_test.md",
-    "nsfw": "system_prompt_nsfw.md",
+    "Python":"python.md",
+    "test": "test.md",
+    "nsfw": "nsfw.md",
     "temp": "temp.md",
-    "空": "system_prompt_04.md",
 }
 
 PROMPT_CACHE = {}

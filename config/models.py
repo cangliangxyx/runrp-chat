@@ -43,26 +43,12 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    # deepseek-chat / deepseek-reasoner
-    "deepseek-chat": {
-        "label": "deepseek-chat",
-        "supports_streaming": True,
-        "default_temperature": 0.6,
-        "client_name": "deepseek",
-    },
     # google_api
     "google_api": {
         "label": "gemini-2.5-flash",
         "supports_streaming": True,
         "default_temperature": 0.6,
         "client_name": "google_api",
-    },
-    # google_api
-    "nano-banana": {
-        "label": "nano-banana",
-        "supports_streaming": True,
-        "default_temperature": 0.6,
-        "client_name": "nano-banana",
     },
 }
 
