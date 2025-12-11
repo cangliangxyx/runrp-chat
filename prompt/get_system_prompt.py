@@ -24,4 +24,4 @@ def get_system_prompt(name: str) -> str:
     except FileNotFoundError:
         raise FileNotFoundError(f"未找到系统提示文件: {file_path}")
 if __name__ == "__main__":
-    print(get_system_prompt("book"))
+    print(get_system_prompt("default"))
