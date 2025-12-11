@@ -32,13 +32,13 @@ ASSETS_DIR = os.path.join(FRONTEND_DIST, "assets")
 
 app = FastAPI(title="Nebula Chat API")
 
-# ✅ 托管 Vite 构建后的静态资源
+# 托管 Vite 构建后的静态资源
 if os.path.exists(ASSETS_DIR):
     app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 else:
     logger.warning("⚠️ 未检测到 frontend/dist/assets，请先执行：npm run build")
 
-# ✅ 托管你原有的 static 目录（如果还需要）
+# 托管你原有的 static 目录（如果还需要）
 if os.path.exists(os.path.join(BASE_DIR, "static")):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -48,7 +48,7 @@ if os.path.exists(os.path.join(BASE_DIR, "static")):
 current_personas = get_default_personas()
 
 # -----------------------------
-# ✅ 前端入口（替代 Flask + templates）
+# 前端入口（替代 Flask + templates）
 # -----------------------------
 @app.get("/", response_class=HTMLResponse)
 async def index():
@@ -61,45 +61,8 @@ async def index():
     return FileResponse(index_file)
 
 # -----------------------------
-# ✅ 聊天接口
+# 聊天接口
 # -----------------------------
-# @app.post("/chat")
-# async def chat(
-#     model: str = Form(...),
-#     prompt: str = Form(...),
-#     system_rule: str = Form("default"),
-#     web_input: str = Form(""),
-#     nsfw: str = Form("true"),
-#     stream: str = Form("true"),
-# ):
-#     logger.info(f"[chat] 接收到表单参数: model={model}, system_rule={system_rule}, stream={stream}, nsfw={nsfw}")
-#     if model not in list_model_ids():
-#         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
-#     try:
-#         system_prompt = get_system_prompt(system_rule)
-#     except KeyError:
-#         raise HTTPException(status_code=400, detail=f"system_rule '{system_rule}' 不存在")
-#
-#     nsfw_enabled = nsfw.lower() == "true"
-#     stream_enabled = stream.lower() == "true"
-#
-#     try:
-#         async def event_stream():
-#             async for chunk in execute_model_for_app(
-#                 model_name=model,
-#                 user_input=prompt,
-#                 system_instructions=system_prompt,
-#                 personas=current_personas,
-#                 web_input=web_input,
-#                 nsfw=nsfw_enabled,
-#                 stream=stream_enabled
-#             ):
-#                 yield json.dumps(chunk, ensure_ascii=False) + "\n"
-#         # 修改 media_type，前端方便解析
-#         return StreamingResponse(event_stream(), media_type="application/json")
-#     except Exception as e:
-#         logger.error(f"[chat] 流式响应出错: {e}", exc_info=True)
-#         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
 @app.post("/chat")
 async def chat(
     model: str = Form(...),
@@ -146,18 +109,19 @@ async def chat(
                 nsfw=nsfw_enabled,
                 stream=False
             ):
-                logger.info(f"[非流模式] 收到 chunk: {chunk}")  # ✅ 打印每个 chunk
+                logger.info(f"[非流模式] 收到 chunk: {chunk}")  # 打印每个 chunk
                 result_chunks.append(chunk)
             # 根据 execute_model_for_app 的返回结构调整
             logger.info(f"[非流模式] 总共 {len(result_chunks)} 个 chunk")
             full_result = {"results": result_chunks}
-            logger.info(f"[非流模式] full_result={full_result}")  # ✅ 打印最终返回数据
+            logger.info(f"[非流模式] full_result={full_result}")  # 打印最终返回数据
             return JSONResponse(full_result)
     except Exception as e:
         logger.error(f"[chat] 响应出错: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
+    
 # -----------------------------
-# ✅ 获取人物列表
+# 获取人物列表
 # -----------------------------
 @app.get("/personas")
 async def get_persona_list():
@@ -167,7 +131,7 @@ async def get_persona_list():
     })
 
 # -----------------------------
-# ✅ 更新人物列表
+# 更新人物列表
 # -----------------------------
 @app.post("/personas")
 async def update_personas(selected: str = Form(...)):
@@ -179,7 +143,7 @@ async def update_personas(selected: str = Form(...)):
     return JSONResponse({"status": "ok", "current_personas": current_personas})
 
 # -----------------------------
-# ✅ 重新加载聊天历史
+# 重新加载聊天历史
 # -----------------------------
 @app.post("/reload_history")
 async def reload_history():
@@ -192,7 +156,7 @@ async def reload_history():
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 # -----------------------------
-# ✅ 清空聊天历史
+# 清空聊天历史
 # -----------------------------
 @app.post("/clear_history")
 async def clear_history():
@@ -201,21 +165,21 @@ async def clear_history():
     return JSONResponse({"status": "ok"})
 
 # -----------------------------
-# ✅ 获取 system_rules
+# 获取 system_rules
 # -----------------------------
 @app.get("/system_rules")
 async def get_system_rules():
     return JSONResponse({"rules": list(PROMPT_FILES.keys())})
 
 # -----------------------------
-# ✅ 获取模型列表
+# 获取模型列表
 # -----------------------------
 @app.get("/system_model")
 async def get_system_models():
     return JSONResponse({"rules": list(list_model_ids())})
 
 # -----------------------------
-# ✅ 删除最后一条聊天记录
+# 删除最后一条聊天记录
 # -----------------------------
 @app.post("/remove_last_entry")
 async def remove_last_entry():
@@ -230,7 +194,7 @@ async def remove_last_entry():
         logger.error(f"[remove_last_entry] 失败: {e}", exc_info=True)
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
-# ✅ SPA 前端兜底路由（必须放在所有 API 之后）
+# SPA 前端兜底路由（必须放在所有 API 之后）
 @app.get("/{full_path:path}", response_class=HTMLResponse)
 async def spa_fallback(full_path: str):
     # 排除后端 API 与静态资源路径
@@ -252,7 +216,7 @@ async def spa_fallback(full_path: str):
     return HTMLResponse("Frontend not built", status_code=404)
 
 # -----------------------------
-# ✅ 启动服务（生产安全版）
+# 启动服务（生产安全版）
 # -----------------------------
 if __name__ == "__main__":
     import uvicorn
