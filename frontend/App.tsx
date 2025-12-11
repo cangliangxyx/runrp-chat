@@ -253,7 +253,7 @@ function App() {
               <MenuIcon className="w-5 h-5 md:w-6 md:h-6" />
             </button>
             <h1 className="text-base md:text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent truncate">
-              Nebula
+              Runchat
             </h1>
           </div>
 

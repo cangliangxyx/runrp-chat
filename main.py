@@ -109,12 +109,12 @@ async def chat(
                 nsfw=nsfw_enabled,
                 stream=False
             ):
-                logger.info(f"[非流模式] 收到 chunk: {chunk}")  # 打印每个 chunk
+                # logger.info(f"[非流模式] 收到 chunk: {chunk}")  # 打印每个 chunk
                 result_chunks.append(chunk)
             # 根据 execute_model_for_app 的返回结构调整
-            logger.info(f"[非流模式] 总共 {len(result_chunks)} 个 chunk")
+            # logger.info(f"[非流模式] 总共 {len(result_chunks)} 个 chunk")
             full_result = {"results": result_chunks}
-            logger.info(f"[非流模式] full_result={full_result}")  # 打印最终返回数据
+            # logger.info(f"[非流模式] full_result={full_result}")  # 打印最终返回数据
             return JSONResponse(full_result)
     except Exception as e:
         logger.error(f"[chat] 响应出错: {e}", exc_info=True)
