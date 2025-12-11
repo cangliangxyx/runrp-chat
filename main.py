@@ -63,81 +63,6 @@ async def index():
 # -----------------------------
 # ✅ 聊天接口
 # -----------------------------
-# @app.post("/chat")
-# async def chat(
-#     model: str = Form(...),
-#     prompt: str = Form(...),
-#     system_rule: str = Form("default"),
-#     web_input: str = Form(""),
-#     nsfw: str = Form("true"),
-#     stream: str = Form("true"),
-# ):
-#     logger.info(f"[chat] model={model}, system_rule={system_rule}, nsfw={nsfw}")
-#
-#     if model not in list_model_ids():
-#         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
-#
-#     try:
-#         system_prompt = get_system_prompt(system_rule)
-#     except KeyError:
-#         raise HTTPException(status_code=400, detail=f"system_rule '{system_rule}' 不存在")
-#
-#     nsfw_enabled = nsfw.lower() == "true"
-#     stream_enabled = stream.lower() == "true"
-#
-#     try:
-#         if stream_enabled:
-#             # -------------------- 流式输出 --------------------
-#             async def event_stream():
-#                 last_full = ""
-#                 async for chunk in execute_model_for_app(
-#                         model_name=model,
-#                         user_input=prompt,
-#                         system_instructions=system_prompt,
-#                         personas=current_personas,
-#                         web_input=web_input,
-#                         nsfw=nsfw_enabled,
-#                         stream=True
-#                 ):
-#                     # 结束标记
-#                     if isinstance(chunk, dict) and chunk.get("type") == "end":
-#                         full_text = chunk.get("full", "").strip()
-#                         if full_text:
-#                             yield json.dumps({"text": full_text}, ensure_ascii=False) + "\n"
-#                     # 普通文本片段
-#                     elif isinstance(chunk, dict) and chunk.get("text", "").strip():
-#                         last_full += chunk.get("text", "")
-#                         yield json.dumps({"text": last_full}, ensure_ascii=False) + "\n"
-#                     # 非文本或空内容忽略
-#             return StreamingResponse(event_stream(), media_type="application/json")
-#
-#         else:
-#             # -------------------- 非流式输出 --------------------
-#             result_text = ""
-#             async for chunk in execute_model_for_app(
-#                     model_name=model,
-#                     user_input=prompt,
-#                     system_instructions=system_prompt,
-#                     personas=current_personas,
-#                     web_input=web_input,
-#                     nsfw=nsfw_enabled,
-#                     stream=True
-#             ):
-#                 if isinstance(chunk, dict):
-#                     # 只要最终的完整文本
-#                     if chunk.get("type") == "end" and chunk.get("full"):
-#                         result_text = chunk["full"].strip()
-#                         break
-#                     elif isinstance(chunk, str) and chunk.strip():
-#                         result_text = chunk.strip()
-#                 else:
-#                     result_text += str(chunk)
-#             return JSONResponse({"text": result_text})
-#
-#     except Exception as e:
-#         logger.error(f"[chat] 处理请求出错: {e}", exc_info=True)
-#         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
-
 @app.post("/chat")
 async def chat(
     model: str = Form(...),
@@ -147,11 +72,9 @@ async def chat(
     nsfw: str = Form("true"),
     stream: str = Form("true"),
 ):
-    logger.info(f"[chat] 接收到表单参数: model={model}, system_rule={system_rule}, nsfw={nsfw}")
-
+    logger.info(f"[chat] 接收到表单参数: model={model}, system_rule={system_rule}, stream={stream}, nsfw={nsfw}")
     if model not in list_model_ids():
         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
-
     try:
         system_prompt = get_system_prompt(system_rule)
     except KeyError:
@@ -171,12 +94,9 @@ async def chat(
                 nsfw=nsfw_enabled,
                 stream=stream_enabled
             ):
-                # 转成 JSON 行（NDJSON）
                 yield json.dumps(chunk, ensure_ascii=False) + "\n"
-
         # 修改 media_type，前端方便解析
         return StreamingResponse(event_stream(), media_type="application/json")
-
     except Exception as e:
         logger.error(f"[chat] 流式响应出错: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
