@@ -2,15 +2,13 @@
 from pathlib import Path
 
 PROMPT_FILES = {
-    "book": "book.md",
-    "book_v6": "book_v6.md",
-    "book_v7": "book_v7.md",
+    "聊天助手": "chat_companion.md",
     "提示词助手": "system_prompt_assist.md",
+    "book": "book.md",
     "真实现实恋爱模拟器": "system_prompt_01.md",
     "安清雪": "system_prompt_02.md",
     "女神反转系统": "system_prompt_03.md",
     "Python":"python.md",
-    "test": "test.md",
     "nsfw": "nsfw.md",
     "temp": "temp.md",
 }
