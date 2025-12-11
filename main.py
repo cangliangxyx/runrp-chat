@@ -2,7 +2,8 @@
 import json
 import logging
 import os
-from fastapi import FastAPI, Request, Form, HTTPException
+
+from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -36,7 +37,7 @@ app = FastAPI(title="Nebula Chat API")
 if os.path.exists(ASSETS_DIR):
     app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 else:
-    logger.warning("⚠️ 未检测到 frontend/dist/assets，请先执行：npm run build")
+    logger.warning(" 未检测到 frontend/dist/assets，请先执行：npm run build")
 
 # 托管你原有的 static 目录（如果还需要）
 if os.path.exists(os.path.join(BASE_DIR, "static")):
@@ -45,7 +46,7 @@ if os.path.exists(os.path.join(BASE_DIR, "static")):
 # -----------------------------
 # 全局变量
 # -----------------------------
-current_personas = get_default_personas()
+current_personas = get_default_personas()  # 获取人物列表
 
 # -----------------------------
 # 前端入口（替代 Flask + templates）
@@ -79,10 +80,8 @@ async def chat(
         system_prompt = get_system_prompt(system_rule)
     except KeyError:
         raise HTTPException(status_code=400, detail=f"system_rule '{system_rule}' 不存在")
-
     nsfw_enabled = nsfw.lower() == "true"
     stream_enabled = stream.lower() == "true"
-    print("stream_enabled =", stream_enabled)
     try:
         if stream_enabled:
             async def event_stream():
@@ -109,12 +108,8 @@ async def chat(
                 nsfw=nsfw_enabled,
                 stream=False
             ):
-                # logger.info(f"[非流模式] 收到 chunk: {chunk}")  # 打印每个 chunk
                 result_chunks.append(chunk)
-            # 根据 execute_model_for_app 的返回结构调整
-            # logger.info(f"[非流模式] 总共 {len(result_chunks)} 个 chunk")
             full_result = {"results": result_chunks}
-            # logger.info(f"[非流模式] full_result={full_result}")  # 打印最终返回数据
             return JSONResponse(full_result)
     except Exception as e:
         logger.error(f"[chat] 响应出错: {e}", exc_info=True)
