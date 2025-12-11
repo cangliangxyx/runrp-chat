@@ -152,6 +152,14 @@ async def get_system_rules():
     return JSONResponse({"rules": list(PROMPT_FILES.keys())})
 
 # -----------------------------
+# 获取model
+# -----------------------------
+@app.get("/system_model")
+async def get_system_rules():
+    """返回所有可选的 system_rules"""
+    return JSONResponse({"rules": list(list_model_ids())})
+
+# -----------------------------
 # 删除最后一条聊天记录
 # -----------------------------
 @app.post("/remove_last_entry")
