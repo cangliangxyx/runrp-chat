@@ -25,6 +25,7 @@ function App() {
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // --- Effects ---
 
@@ -67,6 +68,11 @@ function App() {
     setInput('');
     setLoading(true);
 
+    // Reset height of textarea
+    if (textareaRef.current) {
+        textareaRef.current.style.height = '60px';
+    }
+
     try {
       const response = await api.chat(
         config.model,
@@ -77,67 +83,119 @@ function App() {
         config.stream
       );
 
-      if (config.stream && response.body) {
-        // Streaming Logic
+      // Placeholder for AI response
+      const aiMsgId = (Date.now() + 1).toString();
+      setMessages(prev => [
+        ...prev,
+        { id: aiMsgId, role: 'assistant', content: '', timestamp: Date.now() }
+      ]);
+
+      if (config.stream) {
+        // --- STREAMING HANDLING ---
+        if (!response.body) throw new Error("No response body received from server.");
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
-        
-        // Placeholder for AI response
-        const aiMsgId = (Date.now() + 1).toString();
-        setMessages(prev => [
-          ...prev,
-          { id: aiMsgId, role: 'assistant', content: '', timestamp: Date.now() }
-        ]);
 
         let accumulatedContent = '';
+        let buffer = '';
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(line => line.trim() !== '');
+          // Decode the chunk and append to buffer
+          buffer += decoder.decode(value, { stream: true });
+
+          // Split by newline to handle NDJSON
+          const lines = buffer.split('\n');
+
+          // The last line might be incomplete, so we keep it in the buffer
+          buffer = lines.pop() ?? '';
 
           for (const line of lines) {
+            if (!line.trim()) continue;
+
             try {
-              // The backend sends `json.dumps(chunk)`
               const parsed = JSON.parse(line);
-              
-              // Handle various potential formats from the generic python generator
+
+              // 1. Handle "end" signal or control messages
+              if (parsed && typeof parsed === 'object' && parsed.type === 'end') {
+                continue;
+              }
+
+              // 2. Extract content
               let textPart = '';
               if (typeof parsed === 'string') {
                 textPart = parsed;
               } else if (typeof parsed === 'object' && parsed !== null) {
-                 textPart = parsed.content || parsed.text || JSON.stringify(parsed);
+                 // Prioritize 'content' or 'text' fields.
+                 textPart = parsed.content || parsed.text || '';
               }
 
-              accumulatedContent += textPart;
-              
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === aiMsgId ? { ...msg, content: accumulatedContent } : msg
-                )
-              );
+              // 3. Update UI
+              if (textPart) {
+                accumulatedContent += textPart;
+                setMessages(prev =>
+                  prev.map(msg =>
+                    msg.id === aiMsgId ? { ...msg, content: accumulatedContent } : msg
+                  )
+                );
+              }
             } catch (e) {
-              console.warn('Error parsing stream chunk', e);
+              console.warn('Error parsing stream line:', line, e);
             }
           }
         }
+
+        // Process any remaining buffer content
+        if (buffer.trim()) {
+             try {
+                const parsed = JSON.parse(buffer);
+                 if (parsed && (!parsed.type || parsed.type !== 'end')) {
+                     const textPart = typeof parsed === 'string' ? parsed : (parsed.content || parsed.text || '');
+                     if (textPart) {
+                        setMessages(prev =>
+                            prev.map(msg =>
+                                msg.id === aiMsgId ? { ...msg, content: accumulatedContent + textPart } : msg
+                            )
+                        );
+                     }
+                 }
+             } catch (e) { /* Ignore incomplete JSON at end */ }
+        }
+
       } else {
-        // Non-streaming logic (fallback)
+        // --- NON-STREAMING HANDLING ---
+        // Parse the entire response as a single JSON object
         const data = await response.json();
-        const content = typeof data === 'string' ? data : JSON.stringify(data);
-         setMessages(prev => [
-          ...prev,
-          { id: Date.now().toString(), role: 'assistant', content: content, timestamp: Date.now() }
-        ]);
+
+        let fullContent = '';
+
+        // Check for the specific structure returned by the python backend in non-stream mode:
+        // {"results": [{"type": "chunk", "content": "..."}, {"type": "end", "full": "..."}]}
+        if (data.results && Array.isArray(data.results)) {
+            fullContent = data.results
+                .filter((item: any) => item.type !== 'end') // Filter out the 'end' signal
+                .map((item: any) => item.content || item.text || '')
+                .join('');
+        } else if (data.content) {
+            // Fallback for simple structures
+            fullContent = data.content;
+        }
+
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === aiMsgId ? { ...msg, content: fullContent } : msg
+          )
+        );
       }
 
     } catch (error) {
       console.error("Chat error:", error);
       setMessages(prev => [
         ...prev,
-        { id: Date.now().toString(), role: 'system', content: 'Error: Failed to send message.', timestamp: Date.now() }
+        { id: Date.now().toString(), role: 'system', content: 'Error: Failed to send message. Please check the connection.', timestamp: Date.now() }
       ]);
     } finally {
       setLoading(false);
@@ -146,7 +204,6 @@ function App() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && e.shiftKey) {
-        // Allow new line
         return;
     }
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -163,7 +220,8 @@ function App() {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-100 font-sans selection:bg-blue-500/30">
+    // Use [100dvh] for dynamic viewport height to fix mobile address bar issues
+    <div className="flex h-[100dvh] bg-gray-950 text-gray-100 font-sans selection:bg-blue-500/30 overflow-hidden">
       
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -183,42 +241,42 @@ function App() {
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col relative transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : ''}`}>
+      <div className={`flex-1 flex flex-col relative transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : ''} w-full`}>
         
-        {/* Top Navigation Bar */}
-        <header className="h-16 flex items-center justify-between px-4 border-b border-gray-800/50 bg-gray-950/80 backdrop-blur-md sticky top-0 z-30">
-          <div className="flex items-center gap-3">
+        {/* Top Navigation Bar - Sticky & Blur */}
+        <header className="flex-none h-14 md:h-16 flex items-center justify-between px-3 md:px-4 border-b border-gray-800/50 bg-gray-950/80 backdrop-blur-md sticky top-0 z-30 pt-safe">
+          <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 md:p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors shrink-0"
             >
-              <MenuIcon className="w-5 h-5" />
+              <MenuIcon className="w-5 h-5 md:w-6 md:h-6" />
             </button>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              Nebula Chat
+            <h1 className="text-base md:text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent truncate">
+              Nebula
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Model Selector */}
-            <div className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5">
-               <SettingsIcon className="w-4 h-4 text-gray-500" />
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+            {/* Model Selector - Compact on Mobile */}
+            <div className="flex items-center gap-1 md:gap-2 bg-gray-900 border border-gray-800 rounded-lg px-2 py-1 md:px-3 md:py-1.5 max-w-[120px] md:max-w-xs">
+               <SettingsIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-500 shrink-0" />
                <select 
                  value={config.model}
                  onChange={(e) => setConfig({...config, model: e.target.value})}
-                 className="bg-transparent border-none outline-none text-sm text-gray-200 cursor-pointer min-w-[100px]"
+                 className="bg-transparent border-none outline-none text-xs md:text-sm text-gray-200 cursor-pointer w-full text-ellipsis"
                >
                  {models.map(m => <option key={m} value={m} className="bg-gray-900">{m}</option>)}
                </select>
             </div>
 
-            {/* Rule Selector */}
-            <div className="hidden md:flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5">
-               <span className="text-xs text-gray-500 font-bold uppercase">Rule</span>
+            {/* Rule Selector - Visible but compact on mobile */}
+            <div className="flex items-center gap-1 md:gap-2 bg-gray-900 border border-gray-800 rounded-lg px-2 py-1 md:px-3 md:py-1.5 max-w-[100px] md:max-w-xs">
+               <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase shrink-0 hidden xs:block">Rule</span>
                <select 
                  value={config.systemRule}
                  onChange={(e) => setConfig({...config, systemRule: e.target.value})}
-                 className="bg-transparent border-none outline-none text-sm text-gray-200 cursor-pointer max-w-[120px]"
+                 className="bg-transparent border-none outline-none text-xs md:text-sm text-gray-200 cursor-pointer w-full text-ellipsis"
                >
                  {rules.map(r => <option key={r} value={r} className="bg-gray-900">{r}</option>)}
                </select>
@@ -227,32 +285,32 @@ function App() {
         </header>
 
         {/* Chat Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
-          <div className="max-w-4xl mx-auto space-y-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-8 scroll-smooth w-full">
+          <div className="max-w-4xl mx-auto space-y-6 pb-2">
             
             {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-[50vh] text-gray-500">
-                    <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mb-4 border border-gray-800">
-                        <BotIcon className="w-8 h-8 text-blue-500/50" />
+                <div className="flex flex-col items-center justify-center h-[40vh] md:h-[50vh] text-gray-500">
+                    <div className="w-14 h-14 md:w-16 md:h-16 bg-gray-900 rounded-full flex items-center justify-center mb-4 border border-gray-800">
+                        <BotIcon className="w-6 h-6 md:w-8 md:h-8 text-blue-500/50" />
                     </div>
-                    <p className="text-lg font-medium">Start a new conversation</p>
-                    <p className="text-sm opacity-60">Select a persona and model to begin.</p>
+                    <p className="text-base md:text-lg font-medium">Start a new conversation</p>
+                    <p className="text-xs md:text-sm opacity-60">Select a persona and model to begin.</p>
                 </div>
             )}
 
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex gap-2 md:gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.role !== 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg mt-1">
-                    <BotIcon className="w-5 h-5 text-white" />
+                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg mt-1">
+                    <BotIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                   </div>
                 )}
                 
                 <div
-                  className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-3.5 leading-relaxed shadow-md ${
+                  className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-none'
                       : msg.role === 'system'
@@ -260,14 +318,14 @@ function App() {
                       : 'bg-gray-800 text-gray-100 border border-gray-700/50 rounded-bl-none'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap text-sm md:text-base">
+                  <div className="whitespace-pre-wrap text-sm md:text-base break-words">
                       {msg.content}
                   </div>
                 </div>
 
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0 mt-1">
-                    <UserIcon className="w-5 h-5 text-gray-300" />
+                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0 mt-1">
+                    <UserIcon className="w-4 h-4 md:w-5 md:h-5 text-gray-300" />
                   </div>
                 )}
               </div>
@@ -275,8 +333,8 @@ function App() {
             
             {loading && messages.length > 0 && messages[messages.length -1].role === 'user' && (
                 <div className="flex gap-4">
-                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                        <BotIcon className="w-5 h-5 text-white" />
+                     <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <BotIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                     </div>
                     <div className="bg-gray-800 rounded-2xl px-5 py-4 rounded-bl-none flex items-center gap-1">
                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
@@ -291,16 +349,17 @@ function App() {
         </main>
 
         {/* Input Area */}
-        <footer className="p-4 bg-gray-950/90 backdrop-blur border-t border-gray-800/50">
+        {/* pb-safe accounts for iPhone Home Indicator */}
+        <footer className="flex-none p-3 md:p-4 bg-gray-950/90 backdrop-blur border-t border-gray-800/50 pb-safe">
           <div className="max-w-4xl mx-auto space-y-3">
             
-            {/* Quick Actions */}
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {/* Quick Actions - Scrollable on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar mask-gradient-right">
                 {quickActions.map(action => (
                     <button
                         key={action.label}
                         onClick={() => setInput(action.value)}
-                        className="whitespace-nowrap px-3 py-1.5 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-md text-xs font-medium text-gray-400 hover:text-blue-400 transition-colors"
+                        className="whitespace-nowrap px-3 py-1.5 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-full md:rounded-md text-xs font-medium text-gray-400 hover:text-blue-400 transition-colors flex-shrink-0"
                     >
                         {action.label}
                     </button>
@@ -309,27 +368,29 @@ function App() {
 
             <div className="relative group">
               <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask me a question or give me a command..."
-                className="w-full bg-gray-900 border border-gray-800 text-gray-100 rounded-xl pl-4 pr-14 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none h-[60px] max-h-[200px] shadow-inner transition-all"
-                style={{ minHeight: '60px' }}
+                placeholder="Message..."
+                // text-base on mobile prevents iOS zoom, text-sm on desktop looks cleaner
+                className="w-full bg-gray-900 border border-gray-800 text-gray-100 rounded-xl pl-4 pr-12 md:pr-14 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none h-[50px] md:h-[60px] max-h-[150px] shadow-inner transition-all text-base md:text-sm"
+                style={{ minHeight: '50px' }}
               />
               <button
                 onClick={handleSendMessage}
                 disabled={loading || !input.trim()}
-                className={`absolute right-2 bottom-2.5 p-2 rounded-lg transition-all duration-200 ${
+                className={`absolute right-2 bottom-2 md:bottom-2.5 p-2 rounded-lg transition-all duration-200 ${
                   input.trim() && !loading
                     ? 'bg-blue-600 text-white shadow-lg hover:bg-blue-500 hover:scale-105'
                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                <SendIcon className="w-5 h-5" />
+                <SendIcon className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
             
-             <div className="text-center">
+             <div className="hidden md:block text-center">
                 <p className="text-[10px] text-gray-600">
                     Shift + Enter for new line. AI output can be unpredictable.
                 </p>

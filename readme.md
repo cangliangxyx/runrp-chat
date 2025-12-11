@@ -3,7 +3,8 @@
 ✅ 但你目前 还停留在「开发态」，还没有进入「生产部署态」
 这是一个使用Python实现的聊天应用程序，支持调用不同的语言模型并流式返回生成的内容。项目通过与后端API交互来获取模型响应，并管理聊天历史记录。
 
-
+npm uninstall react react-dom
+npm install 
 npm run build
 ## 目录结构
 ```

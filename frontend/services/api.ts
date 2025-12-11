@@ -13,6 +13,7 @@ export const api = {
   getModels: async (): Promise<string[]> => {
     try {
       const res = await fetch('/system_model');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return data.rules || [];
     } catch (e) {
@@ -24,6 +25,7 @@ export const api = {
   getRules: async (): Promise<string[]> => {
     try {
       const res = await fetch('/system_rules');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return data.rules || [];
     } catch (e) {
@@ -35,6 +37,7 @@ export const api = {
   getPersonas: async (): Promise<Persona[]> => {
     try {
       const res = await fetch('/personas');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return data.personas || [];
     } catch (e) {
@@ -81,9 +84,16 @@ export const api = {
       stream,
     });
 
-    return fetch('/chat', {
+    // We do NOT call .json() here because we want to handle the stream in App.tsx
+    const res = await fetch('/chat', {
       method: 'POST',
       body: formData,
     });
+
+    if (!res.ok) {
+        throw new Error(`Chat API Failed: ${res.status} ${res.statusText}`);
+    }
+
+    return res;
   },
 };

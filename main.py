@@ -63,6 +63,43 @@ async def index():
 # -----------------------------
 # ✅ 聊天接口
 # -----------------------------
+# @app.post("/chat")
+# async def chat(
+#     model: str = Form(...),
+#     prompt: str = Form(...),
+#     system_rule: str = Form("default"),
+#     web_input: str = Form(""),
+#     nsfw: str = Form("true"),
+#     stream: str = Form("true"),
+# ):
+#     logger.info(f"[chat] 接收到表单参数: model={model}, system_rule={system_rule}, stream={stream}, nsfw={nsfw}")
+#     if model not in list_model_ids():
+#         raise HTTPException(status_code=400, detail=f"模型 '{model}' 不存在")
+#     try:
+#         system_prompt = get_system_prompt(system_rule)
+#     except KeyError:
+#         raise HTTPException(status_code=400, detail=f"system_rule '{system_rule}' 不存在")
+#
+#     nsfw_enabled = nsfw.lower() == "true"
+#     stream_enabled = stream.lower() == "true"
+#
+#     try:
+#         async def event_stream():
+#             async for chunk in execute_model_for_app(
+#                 model_name=model,
+#                 user_input=prompt,
+#                 system_instructions=system_prompt,
+#                 personas=current_personas,
+#                 web_input=web_input,
+#                 nsfw=nsfw_enabled,
+#                 stream=stream_enabled
+#             ):
+#                 yield json.dumps(chunk, ensure_ascii=False) + "\n"
+#         # 修改 media_type，前端方便解析
+#         return StreamingResponse(event_stream(), media_type="application/json")
+#     except Exception as e:
+#         logger.error(f"[chat] 流式响应出错: {e}", exc_info=True)
+#         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
 @app.post("/chat")
 async def chat(
     model: str = Form(...),
@@ -82,9 +119,24 @@ async def chat(
 
     nsfw_enabled = nsfw.lower() == "true"
     stream_enabled = stream.lower() == "true"
-
+    print("stream_enabled =", stream_enabled)
     try:
-        async def event_stream():
+        if stream_enabled:
+            async def event_stream():
+                async for chunk in execute_model_for_app(
+                    model_name=model,
+                    user_input=prompt,
+                    system_instructions=system_prompt,
+                    personas=current_personas,
+                    web_input=web_input,
+                    nsfw=nsfw_enabled,
+                    stream=True
+                ):
+                    yield json.dumps(chunk, ensure_ascii=False) + "\n"
+            return StreamingResponse(event_stream(), media_type="application/json")
+        else:
+            # 非流式：一次性获取完整结果
+            result_chunks = []
             async for chunk in execute_model_for_app(
                 model_name=model,
                 user_input=prompt,
@@ -92,15 +144,18 @@ async def chat(
                 personas=current_personas,
                 web_input=web_input,
                 nsfw=nsfw_enabled,
-                stream=stream_enabled
+                stream=False
             ):
-                yield json.dumps(chunk, ensure_ascii=False) + "\n"
-        # 修改 media_type，前端方便解析
-        return StreamingResponse(event_stream(), media_type="application/json")
+                logger.info(f"[非流模式] 收到 chunk: {chunk}")  # ✅ 打印每个 chunk
+                result_chunks.append(chunk)
+            # 根据 execute_model_for_app 的返回结构调整
+            logger.info(f"[非流模式] 总共 {len(result_chunks)} 个 chunk")
+            full_result = {"results": result_chunks}
+            logger.info(f"[非流模式] full_result={full_result}")  # ✅ 打印最终返回数据
+            return JSONResponse(full_result)
     except Exception as e:
-        logger.error(f"[chat] 流式响应出错: {e}", exc_info=True)
+        logger.error(f"[chat] 响应出错: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="服务器处理请求时出错")
-
 # -----------------------------
 # ✅ 获取人物列表
 # -----------------------------

@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Container */}
       <div
-        className={`fixed top-0 left-0 h-full w-80 bg-gray-900 border-r border-gray-800 z-50 transform transition-transform duration-300 ease-in-out shadow-2xl flex flex-col ${
+        className={`fixed top-0 left-0 h-full w-72 md:w-80 max-w-[85vw] bg-gray-900 border-r border-gray-800 z-50 transform transition-transform duration-300 ease-in-out shadow-2xl flex flex-col pt-safe ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -79,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onClearHistory}
                 className="flex-1 flex items-center justify-center gap-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 py-2 px-3 rounded-lg text-sm transition-all"
               >
-                <TrashIcon className="w-4 h-4" /> Clear All
+                <TrashIcon className="w-4 h-4" /> Clear
               </button>
               <button
                 onClick={onRemoveLast}
@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 value={config.webInput}
                 onChange={(e) => setConfig({ ...config, webInput: e.target.value })}
                 className="w-full bg-gray-950 border border-gray-800 rounded-lg p-3 text-sm text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none h-24 transition-all"
-                placeholder="Enter background context or URL content here..."
+                placeholder="Enter background context..."
              />
           </div>
 
@@ -116,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cast & Characters</h3>
-               <button onClick={handleUpdate} className="text-xs text-blue-400 hover:text-blue-300">Save Selection</button>
+               <button onClick={handleUpdate} className="text-xs text-blue-400 hover:text-blue-300">Save</button>
             </div>
             
             <div className="space-y-1 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
@@ -179,8 +179,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
         
-        <div className="p-4 border-t border-gray-800 bg-gray-900/50">
-           <p className="text-xs text-gray-600 text-center">Nebula Chat v1.0</p>
+        <div className="p-4 border-t border-gray-800 bg-gray-900/50 pb-safe">
+           <p className="text-xs text-gray-600 text-center">Nebula Chat v1.1</p>
         </div>
       </div>
     </>
