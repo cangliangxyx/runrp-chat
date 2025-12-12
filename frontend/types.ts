@@ -9,6 +9,7 @@ export interface ChatConfig {
   webInput: string;
   nsfw: boolean;
   stream: boolean;
+    fontSize?: string;
 }
 
 export interface Message {

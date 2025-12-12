@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Persona, ChatConfig } from '../types.ts';
-import { XIcon, TrashIcon, RefreshIcon, UserIcon } from './Icons.tsx';
-import { api } from '../services/api.ts';
+import React from 'react';
+import {ChatConfig, Persona} from '../types.ts';
+import {RefreshIcon, TrashIcon, UserIcon, XIcon} from './Icons.tsx';
+import {api} from '../services/api.ts';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       p.name === name ? { ...p, selected: !p.selected } : p
     );
     setPersonas(updated);
-    
+
     // Fire and forget update
     const selectedNames = updated.filter((p) => p.selected).map((p) => p.name);
     await api.updatePersonas(selectedNames);
@@ -45,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Backdrop for mobile */}
       {isOpen && (
-        <div 
+          <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
           onClick={onClose}
         />
@@ -70,8 +70,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          
-          {/* History Controls */}
+
+            {/* History Controls */}
           <div className="space-y-3">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Session Control</h3>
             <div className="flex gap-2">
@@ -118,8 +118,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cast & Characters</h3>
                <button onClick={handleUpdate} className="text-xs text-blue-400 hover:text-blue-300">Save</button>
             </div>
-            
-            <div className="space-y-1 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+
+              <div className="space-y-1 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
               {personas.map((persona) => (
                 <label
                   key={persona.name}
@@ -150,8 +150,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Settings Toggles */}
           <div className="space-y-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Parameters</h3>
-            
-            <label className="flex items-center justify-between group cursor-pointer">
+
+              <label className="flex items-center justify-between group cursor-pointer">
               <span className="text-sm text-gray-300 group-hover:text-white transition-colors">NSFW Mode</span>
               <div className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -178,9 +178,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </label>
           </div>
         </div>
-        
-        <div className="p-4 border-t border-gray-800 bg-gray-900/50 pb-safe">
-           <p className="text-xs text-gray-600 text-center">Nebula Chat v1.1</p>
+
+          <div className="p-4 border-t border-gray-800 bg-gray-900/50 pb-safe space-y-3">
+              <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Font Size</span>
+                  <select
+                      value={config.fontSize || 'normal'}
+                      onChange={(e) => setConfig({...config, fontSize: e.target.value})}
+                      className="bg-gray-800 border border-gray-700 rounded text-xs text-gray-300 py-1 px-2 focus:outline-none focus:border-blue-500"
+                  >
+                      <option value="small">Small</option>
+                      <option value="normal">Normal</option>
+                      <option value="large">Large</option>
+                      <option value="xl">Extra Large</option>
+                  </select>
+              </div>
+              <p className="text-[10px] text-gray-600 text-center">Nebula Chat v1.1</p>
         </div>
       </div>
     </>

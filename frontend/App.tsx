@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Sidebar } from './components/Sidebar.tsx';
-import { api } from './services/api.ts';
-import { ChatConfig, Message, Persona } from './types.ts';
-import { MenuIcon, SendIcon, BotIcon, UserIcon, SettingsIcon } from './components/Icons.tsx';
+import React, {useEffect, useRef, useState} from 'react';
+import {Sidebar} from './components/Sidebar.tsx';
+import {api} from './services/api.ts';
+import {ChatConfig, Message, Persona} from './types.ts';
+import {BotIcon, MenuIcon, SendIcon, SettingsIcon, UserIcon} from './components/Icons.tsx';
 
 function App() {
   // --- State ---
@@ -22,6 +22,7 @@ function App() {
     webInput: '',
     nsfw: true,
     stream: true,
+      fontSize: 'normal',
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,8 +48,7 @@ function App() {
     init();
   }, []);
 
-  // Auto-scroll 注释自动滚动
-
+    // Auto-scroll  注释自动滚动
   // useEffect(() => {
   //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   // }, [messages]);
@@ -69,7 +69,7 @@ function App() {
     setInput('');
     setLoading(true);
 
-    // Reset height of textarea
+      // Reset height of textarea.
     if (textareaRef.current) {
         textareaRef.current.style.height = '60px';
     }
@@ -220,13 +220,26 @@ function App() {
     { label: 'Desire', value: 'Focus on desire' },
   ];
 
+    const getFontSizeClass = (size?: string) => {
+        switch (size) {
+            case 'small':
+                return 'text-xs md:text-sm';
+            case 'large':
+                return 'text-base md:text-lg';
+            case 'xl':
+                return 'text-lg md:text-xl';
+            default:
+                return 'text-sm md:text-base';
+        }
+    };
+
   return (
     // Use [100dvh] for dynamic viewport height to fix mobile address bar issues
     <div className="flex h-[100dvh] bg-gray-950 text-gray-100 font-sans selection:bg-blue-500/30 overflow-hidden">
-      
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
+
+        <Sidebar
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
         config={config}
         setConfig={setConfig}
         personas={personas}
@@ -243,11 +256,11 @@ function App() {
 
       {/* Main Content Area */}
       <div className={`flex-1 flex flex-col relative transition-all duration-300 ${isSidebarOpen ? 'md:ml-80' : ''} w-full`}>
-        
+
         {/* Top Navigation Bar - Sticky & Blur */}
         <header className="flex-none h-14 md:h-16 flex items-center justify-between px-3 md:px-4 border-b border-gray-800/50 bg-gray-950/80 backdrop-blur-md sticky top-0 z-30 pt-safe">
           <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
-            <button 
+              <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-1.5 md:p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors shrink-0"
             >
@@ -262,7 +275,7 @@ function App() {
             {/* Model Selector - Compact on Mobile */}
             <div className="flex items-center gap-1 md:gap-2 bg-gray-900 border border-gray-800 rounded-lg px-2 py-1 md:px-3 md:py-1.5 max-w-[120px] md:max-w-xs">
                <SettingsIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-500 shrink-0" />
-               <select 
+                <select
                  value={config.model}
                  onChange={(e) => setConfig({...config, model: e.target.value})}
                  className="bg-transparent border-none outline-none text-xs md:text-sm text-gray-200 cursor-pointer w-full text-ellipsis"
@@ -274,7 +287,7 @@ function App() {
             {/* Rule Selector - Visible but compact on mobile */}
             <div className="flex items-center gap-1 md:gap-2 bg-gray-900 border border-gray-800 rounded-lg px-2 py-1 md:px-3 md:py-1.5 max-w-[100px] md:max-w-xs">
                <span className="text-[10px] md:text-xs text-gray-500 font-bold uppercase shrink-0 hidden xs:block">Rule</span>
-               <select 
+                <select
                  value={config.systemRule}
                  onChange={(e) => setConfig({...config, systemRule: e.target.value})}
                  className="bg-transparent border-none outline-none text-xs md:text-sm text-gray-200 cursor-pointer w-full text-ellipsis"
@@ -288,8 +301,8 @@ function App() {
         {/* Chat Area */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-8 scroll-smooth w-full">
           <div className="max-w-4xl mx-auto space-y-6 pb-2">
-            
-            {messages.length === 0 && (
+
+              {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-[40vh] md:h-[50vh] text-gray-500">
                     <div className="w-14 h-14 md:w-16 md:h-16 bg-gray-900 rounded-full flex items-center justify-center mb-4 border border-gray-800">
                         <BotIcon className="w-6 h-6 md:w-8 md:h-8 text-blue-500/50" />
@@ -309,8 +322,8 @@ function App() {
                     <BotIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                   </div>
                 )}
-                
-                <div
+
+                  <div
                   className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-none'
@@ -319,7 +332,7 @@ function App() {
                       : 'bg-gray-800 text-gray-100 border border-gray-700/50 rounded-bl-none'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap text-sm md:text-base break-words">
+                      <div className={`whitespace-pre-wrap ${getFontSizeClass(config.fontSize)} break-words`}>
                       {msg.content}
                   </div>
                 </div>
