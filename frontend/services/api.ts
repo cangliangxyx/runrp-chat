@@ -1,4 +1,5 @@
-import { Persona } from '../types.ts';
+import {GoogleGenAI} from "@google/genai";
+import {Persona} from '../types.ts';
 
 // Helper to handle form data creation
 const createFormData = (data: Record<string, string | boolean>) => {
@@ -17,8 +18,8 @@ export const api = {
       const data = await res.json();
       return data.rules || [];
     } catch (e) {
-      console.error('Failed to fetch models', e);
-      return [];
+        console.warn('Backend unavailable, using default Gemini models');
+        return ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash-thinking-exp-01-21'];
     }
   },
 
@@ -29,7 +30,7 @@ export const api = {
       const data = await res.json();
       return data.rules || [];
     } catch (e) {
-      console.error('Failed to fetch rules', e);
+        console.warn('Backend unavailable, returning empty rules');
       return [];
     }
   },
@@ -41,30 +42,46 @@ export const api = {
       const data = await res.json();
       return data.personas || [];
     } catch (e) {
-      console.error('Failed to fetch personas', e);
+        console.warn('Backend unavailable, returning empty personas');
       return [];
     }
   },
 
   updatePersonas: async (selectedNames: string[]): Promise<void> => {
-    const formData = new FormData();
-    formData.append('selected', selectedNames.join(','));
-    await fetch('/personas', {
-      method: 'POST',
-      body: formData,
-    });
+      try {
+          const formData = new FormData();
+          formData.append('selected', selectedNames.join(','));
+          await fetch('/personas', {
+              method: 'POST',
+              body: formData,
+          });
+      } catch (e) {
+          // Ignore errors in fallback mode
+      }
   },
 
   clearHistory: async (): Promise<void> => {
-    await fetch('/clear_history', { method: 'POST' });
+      try {
+          await fetch('/clear_history', {method: 'POST'});
+      } catch (e) {
+          // Ignore errors in fallback mode
+      }
   },
 
   reloadHistory: async (): Promise<void> => {
-    await fetch('/reload_history', { method: 'POST' });
+      try {
+          await fetch('/reload_history', {method: 'POST'});
+      } catch (e) {
+          // Ignore errors in fallback mode
+      }
   },
 
   removeLastEntry: async (): Promise<void> => {
-    await fetch('/remove_last_entry', { method: 'POST' });
+      try {
+          await fetch('/remove_last_entry', {method: 'POST'});
+      } catch (e) {
+          // Ignore errors in fallback mode
+      }
   },
 
   chat: async (
@@ -75,25 +92,90 @@ export const api = {
     nsfw: boolean,
     stream: boolean
   ): Promise<Response> => {
-    const formData = createFormData({
-      model,
-      prompt,
-      system_rule: systemRule,
-      web_input: webInput,
-      nsfw,
-      stream,
-    });
+      try {
+          // Try backend first
+          const formData = createFormData({
+              model,
+              prompt,
+              system_rule: systemRule,
+              web_input: webInput,
+              nsfw,
+              stream,
+          });
 
-    // We do NOT call .json() here because we want to handle the stream in App.tsx
-    const res = await fetch('/chat', {
-      method: 'POST',
-      body: formData,
-    });
+          const res = await fetch('/chat', {
+              method: 'POST',
+              body: formData,
+          });
 
-    if (!res.ok) {
-        throw new Error(`Chat API Failed: ${res.status} ${res.statusText}`);
-    }
+          if (!res.ok) {
+              throw new Error(`Chat API Failed: ${res.status} ${res.statusText}`);
+          }
 
-    return res;
+          return res;
+      } catch (error) {
+          console.warn('Backend chat failed, falling back to direct Gemini API', error);
+
+          // Fallback to Gemini SDK
+          const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+
+          // Construct effective prompt with webInput context
+          let fullPrompt = prompt;
+          if (webInput) {
+              fullPrompt = `Context info:\n${webInput}\n\nUser Request:\n${prompt}`;
+          }
+
+          const targetModel = model || 'gemini-2.5-flash';
+
+          const config: any = {};
+          if (systemRule && systemRule !== 'default') {
+              config.systemInstruction = systemRule;
+          }
+
+          if (stream) {
+              const responseStream = await ai.models.generateContentStream({
+                  model: targetModel,
+                  contents: fullPrompt,
+                  config
+              });
+
+              // Create a ReadableStream that mimics the backend's NDJSON output
+              const readable = new ReadableStream({
+                  async start(controller) {
+                      const encoder = new TextEncoder();
+                      try {
+                          for await (const chunk of responseStream) {
+                              const text = chunk.text;
+                              if (text) {
+                                  // Format as JSON line expected by App.tsx
+                                  const line = JSON.stringify({content: text}) + '\n';
+                                  controller.enqueue(encoder.encode(line));
+                              }
+                          }
+                      } catch (err) {
+                          console.error("Stream generation error:", err);
+                          const line = JSON.stringify({content: "\n[Error generating response. Please check API Key or connection.]"}) + '\n';
+                          controller.enqueue(encoder.encode(line));
+                      }
+                      controller.close();
+                  }
+              });
+
+              return new Response(readable, {
+                  headers: {'Content-Type': 'application/x-ndjson'}
+              });
+          } else {
+              // Non-streaming fallback
+              const response = await ai.models.generateContent({
+                  model: targetModel,
+                  contents: fullPrompt,
+                  config
+              });
+
+              return new Response(JSON.stringify({content: response.text}), {
+                  headers: {'Content-Type': 'application/json'}
+              });
+          }
+      }
   },
 };
