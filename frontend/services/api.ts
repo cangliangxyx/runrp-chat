@@ -117,7 +117,15 @@ export const api = {
           console.warn('Backend chat failed, falling back to direct Gemini API', error);
 
           // Fallback to Gemini SDK
-          const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+          const apiKey = process.env.API_KEY;
+          if (!apiKey) {
+              const msg = "Error: API_KEY is missing in environment variables. Cannot use fallback mode.";
+              return new Response(JSON.stringify({content: msg}), {
+                  headers: {'Content-Type': 'application/json'}
+              });
+          }
+
+          const ai = new GoogleGenAI({apiKey});
 
           // Construct effective prompt with webInput context
           let fullPrompt = prompt;
@@ -125,6 +133,7 @@ export const api = {
               fullPrompt = `Context info:\n${webInput}\n\nUser Request:\n${prompt}`;
           }
 
+          // Ensure we have a valid model string
           const targetModel = model || 'gemini-2.5-flash';
 
           const config: any = {};
@@ -133,17 +142,19 @@ export const api = {
           }
 
           if (stream) {
-              const responseStream = await ai.models.generateContentStream({
-                  model: targetModel,
-                  contents: fullPrompt,
-                  config
-              });
-
               // Create a ReadableStream that mimics the backend's NDJSON output
+              // We move the generation inside the start method to catch startup errors (like 403 Invalid Key)
+              // and stream them to the UI instead of crashing the promise.
               const readable = new ReadableStream({
                   async start(controller) {
                       const encoder = new TextEncoder();
                       try {
+                          const responseStream = await ai.models.generateContentStream({
+                              model: targetModel,
+                              contents: fullPrompt,
+                              config
+                          });
+
                           for await (const chunk of responseStream) {
                               const text = chunk.text;
                               if (text) {
@@ -152,9 +163,11 @@ export const api = {
                                   controller.enqueue(encoder.encode(line));
                               }
                           }
-                      } catch (err) {
-                          console.error("Stream generation error:", err);
-                          const line = JSON.stringify({content: "\n[Error generating response. Please check API Key or connection.]"}) + '\n';
+                      } catch (err: any) {
+                          console.error("Gemini Fallback Error:", err);
+                          // Provide a user-friendly error in the chat
+                          const errorMessage = `\n[System: Connection to Gemini API failed. ${err.message || 'Unknown error'}]`;
+                          const line = JSON.stringify({content: errorMessage}) + '\n';
                           controller.enqueue(encoder.encode(line));
                       }
                       controller.close();
@@ -166,15 +179,21 @@ export const api = {
               });
           } else {
               // Non-streaming fallback
-              const response = await ai.models.generateContent({
-                  model: targetModel,
-                  contents: fullPrompt,
-                  config
-              });
+              try {
+                  const response = await ai.models.generateContent({
+                      model: targetModel,
+                      contents: fullPrompt,
+                      config
+                  });
 
-              return new Response(JSON.stringify({content: response.text}), {
-                  headers: {'Content-Type': 'application/json'}
-              });
+                  return new Response(JSON.stringify({content: response.text}), {
+                      headers: {'Content-Type': 'application/json'}
+                  });
+              } catch (err: any) {
+                  return new Response(JSON.stringify({content: `[System Error: ${err.message}]`}), {
+                      headers: {'Content-Type': 'application/json'}
+                  });
+              }
           }
       }
   },
