@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Sidebar} from './components/Sidebar.tsx';
 import {api} from './services/api.ts';
 import {ChatConfig, Message, Persona} from './types.ts';
-import {BotIcon, MenuIcon, SendIcon, SettingsIcon, UserIcon} from './components/Icons.tsx';
+import {BotIcon, MenuIcon, SendIcon, SettingsIcon} from './components/Icons.tsx';
 
 function App() {
   // --- State ---
@@ -10,12 +10,12 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   // Configuration State
   const [models, setModels] = useState<string[]>([]);
   const [rules, setRules] = useState<string[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
-  
+
   const [config, setConfig] = useState<ChatConfig>({
     model: '',
     systemRule: 'default',
@@ -69,7 +69,7 @@ function App() {
     setInput('');
     setLoading(true);
 
-      // Reset height of textarea.
+      // Reset height of textarea
     if (textareaRef.current) {
         textareaRef.current.style.height = '60px';
     }
@@ -317,11 +317,7 @@ function App() {
                 key={msg.id}
                 className={`flex gap-2 md:gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {msg.role !== 'user' && (
-                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg mt-1">
-                    <BotIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                  </div>
-                )}
+                  {/* Icons removed here */}
 
                   <div
                   className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md ${
@@ -337,20 +333,15 @@ function App() {
                   </div>
                 </div>
 
-                {msg.role === 'user' && (
-                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0 mt-1">
-                    <UserIcon className="w-4 h-4 md:w-5 md:h-5 text-gray-300" />
-                  </div>
-                )}
+                  {/* User icon removed here */}
               </div>
             ))}
-            
-            {loading && messages.length > 0 && messages[messages.length -1].role === 'user' && (
-                <div className="flex gap-4">
-                     <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                        <BotIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                    </div>
-                    <div className="bg-gray-800 rounded-2xl px-5 py-4 rounded-bl-none flex items-center gap-1">
+
+              {loading && messages.length > 0 && messages[messages.length -1].role === 'user' && (
+                  <div className="flex gap-4 justify-start">
+                      {/* Loading icon removed */}
+                      <div
+                          className="bg-gray-800 rounded-2xl px-5 py-4 rounded-bl-none flex items-center gap-1 shadow-md border border-gray-700/50">
                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-75"></span>
                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150"></span>
