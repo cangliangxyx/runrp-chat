@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Sidebar} from './components/Sidebar.tsx';
 import {api} from './services/api.ts';
 import {ChatConfig, Message, Persona} from './types.ts';
-import {BotIcon, MenuIcon, SendIcon, SettingsIcon} from './components/Icons.tsx';
+import {BotIcon, CheckIcon, CopyIcon, MenuIcon, SendIcon, SettingsIcon} from './components/Icons.tsx';
 
 function App() {
   // --- State ---
@@ -10,6 +10,10 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+    // UI State for Context Menu
+    const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
+    const [copyFeedbackId, setCopyFeedbackId] = useState<string | null>(null);
 
   // Configuration State
   const [models, setModels] = useState<string[]>([]);
@@ -48,10 +52,12 @@ function App() {
     init();
   }, []);
 
-    // Auto-scroll  注释自动滚动
-  // useEffect(() => {
-  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  // }, [messages]);
+    // Close context menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => setActiveMessageId(null);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, []);
 
   // --- Handlers ---
 
@@ -68,6 +74,7 @@ function App() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+      setActiveMessageId(null); // Close any open menus
 
       // Reset height of textarea
     if (textareaRef.current) {
@@ -213,6 +220,27 @@ function App() {
     }
   };
 
+    const handleMessageClick = (e: React.MouseEvent, msgId: string) => {
+        // If text is selected (highlighted), do not toggle the menu
+        if (window.getSelection()?.toString().length) return;
+
+        e.stopPropagation(); // Prevent global click handler from immediately closing it
+        setActiveMessageId(prev => prev === msgId ? null : msgId);
+    };
+
+    const handleCopy = async (content: string, id: string) => {
+        try {
+            await navigator.clipboard.writeText(content);
+            setCopyFeedbackId(id);
+            setTimeout(() => {
+                setCopyFeedbackId(null);
+                setActiveMessageId(null);
+            }, 1500);
+        } catch (err) {
+            console.error('Failed to copy', err);
+        }
+    };
+
   const quickActions = [
     { label: 'Main Story', value: 'Continue the main story' },
     { label: 'Warm', value: 'Create a warm atmosphere' },
@@ -320,7 +348,8 @@ function App() {
                   {/* Icons removed here */}
 
                   <div
-                  className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md ${
+                      onClick={(e) => handleMessageClick(e, msg.id)}
+                      className={`relative cursor-pointer max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md transition-shadow hover:shadow-lg ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-none'
                       : msg.role === 'system'
@@ -328,16 +357,55 @@ function App() {
                       : 'bg-gray-800 text-gray-100 border border-gray-700/50 rounded-bl-none'
                   }`}
                 >
+                      <div
+                          className={`whitespace-pre-wrap ${getFontSizeClass(config.fontSize)} break-words pointer-events-none`}>
+                          {/*
+                         Note: pointer-events-none on the text content prevents double-selection issues
+                         when clicking the bubble on some devices, but allows text selection because the
+                         parent cursor is pointer. Actually, for text selection to work, we need pointer-events-auto.
+                         Let's keep it default. If I set pointer-events-none, user can't select text.
+                      */}
+                      </div>
                       <div className={`whitespace-pre-wrap ${getFontSizeClass(config.fontSize)} break-words`}>
                       {msg.content}
                   </div>
+
+                      {/* Copy Popup Menu */}
+                      {activeMessageId === msg.id && (
+                          <div
+                              className={`absolute z-20 top-full mt-2 ${msg.role === 'user' ? 'right-0' : 'left-0'} animate-in fade-in zoom-in-95 duration-150`}
+                          >
+                              <div
+                                  className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden p-1 flex items-center">
+                                  <button
+                                      onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCopy(msg.content, msg.id);
+                                      }}
+                                      className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 rounded text-xs md:text-sm text-gray-200 transition-colors whitespace-nowrap"
+                                  >
+                                      {copyFeedbackId === msg.id ? (
+                                          <>
+                                              <CheckIcon className="w-4 h-4 text-green-400"/>
+                                              <span className="text-green-400 font-medium">Copied!</span>
+                                          </>
+                                      ) : (
+                                          <>
+                                              <CopyIcon className="w-4 h-4"/>
+                                              <span>Copy Text</span>
+                                          </>
+                                      )}
+                                  </button>
+                              </div>
+                          </div>
+                      )}
                 </div>
 
                   {/* User icon removed here */}
               </div>
             ))}
 
-              {loading && messages.length > 0 && messages[messages.length -1].role === 'user' && (
+              {loading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
                   <div className="flex gap-4 justify-start">
                       {/* Loading icon removed */}
                       <div
