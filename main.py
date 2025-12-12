@@ -39,14 +39,14 @@ if os.path.exists(ASSETS_DIR):
 else:
     logger.warning(" 未检测到 frontend/dist/assets，请先执行：npm run build")
 
-# 托管你原有的 static 目录（如果还需要）
+# 托管 static 目录（如果还需要）
 if os.path.exists(os.path.join(BASE_DIR, "static")):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # -----------------------------
 # 全局变量
 # -----------------------------
-current_personas = get_default_personas()  # 获取人物列表
+current_personas = get_default_personas()
 
 # -----------------------------
 # 前端入口（替代 Flask + templates）
