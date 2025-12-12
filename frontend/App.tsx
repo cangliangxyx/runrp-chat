@@ -4,6 +4,107 @@ import {api} from './services/api.ts';
 import {ChatConfig, Message, Persona} from './types.ts';
 import {BotIcon, CheckIcon, CopyIcon, MenuIcon, SendIcon, SettingsIcon} from './components/Icons.tsx';
 
+// --- Helper Components ---
+
+const CodeBlock = ({language, code}: { language: string; code: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const lineCount = code.split('\n').length;
+    // Collapse if content is longer than 5 lines
+    const isLong = lineCount > 5;
+
+    if (!isLong) {
+        return (
+            <div
+                className="my-2 rounded-lg bg-gray-950 border border-gray-800 overflow-hidden font-mono text-xs md:text-sm"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div
+                    className="bg-gray-900/50 px-3 py-1 border-b border-gray-800/50 text-[10px] text-gray-500 font-bold uppercase flex justify-between">
+                    <span>{language || 'TEXT'}</span>
+                </div>
+                <div className="p-3 overflow-x-auto">
+                    <pre className="whitespace-pre font-mono text-gray-300">{code}</pre>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={`group my-3 rounded-lg border border-gray-800 bg-gray-950 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'shadow-lg' : 'cursor-pointer hover:border-gray-700'}`}
+            onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+            }}
+        >
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 py-1.5 bg-gray-900/50 border-b border-gray-800/50">
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">{language || 'CODE'}</span>
+                    {!isExpanded && <span className="text-[10px] text-gray-600 animate-pulse">• Click to expand</span>}
+                </div>
+                <button
+                    className={`text-[10px] font-medium transition-colors ${isExpanded ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500'}`}
+                >
+                    {isExpanded ? 'Collapse' : 'Expand'}
+                </button>
+            </div>
+
+            {/* Content */}
+            <div className={`relative ${isExpanded ? '' : 'max-h-32 overflow-hidden'}`}>
+                <div className="p-3 overflow-x-auto">
+                    <pre className="whitespace-pre font-mono text-xs md:text-sm text-gray-300">{code}</pre>
+                </div>
+
+                {/* Gradient Mask for collapsed state */}
+                {!isExpanded && (
+                    <div
+                        className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent flex items-end justify-center pointer-events-none">
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const MessageContent = ({content, fontSizeClass}: { content: string, fontSizeClass: string }) => {
+    // 1. Try to detect pure JSON response (e.g. if the model outputs raw JSON)
+    try {
+        const trimmed = content.trim();
+        // Simple heuristic to avoid aggressive parsing of normal text
+        if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+            const parsed = JSON.parse(trimmed);
+            return <CodeBlock language="json" code={JSON.stringify(parsed, null, 2)}/>;
+        }
+    } catch (e) {
+    }
+
+    // 2. Parse Markdown Code Blocks
+    // Split by code block regex: ```lang ... ```
+    const parts = content.split(/```(\w*)\n?([\s\S]*?)```/g);
+
+    if (parts.length === 1) {
+        return <div className={`whitespace-pre-wrap break-words ${fontSizeClass}`}>{content}</div>;
+    }
+
+    return (
+        <div className="w-full min-w-0">
+            {parts.map((part, i) => {
+                // The split creates: [text, lang, code, text, lang, code, ...]
+                if (i % 3 === 0) {
+                    if (!part) return null;
+                    return <div key={i} className={`whitespace-pre-wrap break-words ${fontSizeClass}`}>{part}</div>;
+                }
+                if (i % 3 === 2) {
+                    const lang = parts[i - 1];
+                    return <CodeBlock key={i} language={lang} code={part.trim()}/>;
+                }
+                return null;
+            })}
+        </div>
+    );
+};
+
 function App() {
   // --- State ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -345,11 +446,9 @@ function App() {
                 key={msg.id}
                 className={`flex gap-2 md:gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                  {/* Icons removed here */}
-
                   <div
                       onClick={(e) => handleMessageClick(e, msg.id)}
-                      className={`relative cursor-pointer max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md transition-shadow hover:shadow-lg ${
+                      className={`relative cursor-pointer max-w-[90%] md:max-w-[80%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md transition-shadow hover:shadow-lg ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-none'
                       : msg.role === 'system'
@@ -357,18 +456,10 @@ function App() {
                       : 'bg-gray-800 text-gray-100 border border-gray-700/50 rounded-bl-none'
                   }`}
                 >
-                      <div
-                          className={`whitespace-pre-wrap ${getFontSizeClass(config.fontSize)} break-words pointer-events-none`}>
-                          {/*
-                         Note: pointer-events-none on the text content prevents double-selection issues
-                         when clicking the bubble on some devices, but allows text selection because the
-                         parent cursor is pointer. Actually, for text selection to work, we need pointer-events-auto.
-                         Let's keep it default. If I set pointer-events-none, user can't select text.
-                      */}
-                      </div>
-                      <div className={`whitespace-pre-wrap ${getFontSizeClass(config.fontSize)} break-words`}>
-                      {msg.content}
-                  </div>
+                      <MessageContent
+                          content={msg.content}
+                          fontSizeClass={getFontSizeClass(config.fontSize)}
+                      />
 
                       {/* Copy Popup Menu */}
                       {activeMessageId === msg.id && (
@@ -400,14 +491,11 @@ function App() {
                           </div>
                       )}
                 </div>
-
-                  {/* User icon removed here */}
               </div>
             ))}
 
               {loading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
                   <div className="flex gap-4 justify-start">
-                      {/* Loading icon removed */}
                       <div
                           className="bg-gray-800 rounded-2xl px-5 py-4 rounded-bl-none flex items-center gap-1 shadow-md border border-gray-700/50">
                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
