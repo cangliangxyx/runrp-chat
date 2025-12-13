@@ -323,22 +323,56 @@ function App() {
 
     const handleMessageClick = (e: React.MouseEvent, msgId: string) => {
         // If text is selected (highlighted), do not toggle the menu
-        if (window.getSelection()?.toString().length) return;
+        // On iOS, a tap generally doesn't create a selection range unless intentional long press.
+        // We check for actual length to avoid false positives.
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) return;
 
         e.stopPropagation(); // Prevent global click handler from immediately closing it
         setActiveMessageId(prev => prev === msgId ? null : msgId);
     };
 
-    const handleCopy = async (content: string, id: string) => {
+    const copyToClipboard = async (text: string) => {
+        // Robust copy function that handles non-secure contexts (http) on mobile
+        if (!navigator.clipboard || !window.isSecureContext) {
+            // Fallback using legacy execCommand
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            // Ensure it's not visible but part of DOM
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                return true;
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+                return false;
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+
         try {
-            await navigator.clipboard.writeText(content);
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (err) {
+            console.error('Clipboard API failed', err);
+            return false;
+        }
+    };
+
+    const handleCopy = async (content: string, id: string) => {
+        const success = await copyToClipboard(content);
+        if (success) {
             setCopyFeedbackId(id);
             setTimeout(() => {
                 setCopyFeedbackId(null);
                 setActiveMessageId(null);
             }, 1500);
-        } catch (err) {
-            console.error('Failed to copy', err);
         }
     };
 
