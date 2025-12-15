@@ -2,10 +2,10 @@
 from pathlib import Path
 
 PROMPT_FILES = {
-    "聊天助手": "chat_companion.md",
+    "聊天": "chat_companion.md",
     "提示词助手": "system_prompt_assist.md",
     "book": "book.md",
-    "真实现实恋爱模拟器": "system_prompt_01.md",
+    "恋爱模拟器": "system_prompt_01.md",
     "安清雪": "system_prompt_02.md",
     "女神反转系统": "system_prompt_03.md",
     "Python":"python.md",
