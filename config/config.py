@@ -12,18 +12,8 @@ CLIENT_CONFIGS = {
         "base_url": "https://chat.cloudapi.vip/v1/chat/completions",
         "api_key": decrypt_message("gAAAAABow8ZKhmf8JW3S29GXjaJMqtnaHQglS8u7T8AMefKK4JoqfhV9y5J6vJIRBtRlmxf9Upb_XgUkRqqJLFgU_Inwrg2pGCktnUz5weLhB3RYjFif5lvtIAoCtMvit5rs2O_909i_ZwPkMKYEGRWOuhuKrwOgiA==")
     },
-    # api_key: runrp_claude_cc
-    "runrp_claude_cc": {
-        "base_url": "https://api.linkapi.org/v1/chat/completions",
-        "api_key": decrypt_message("gAAAAABo1fYbMfy_q-hpmcsMydhrpgwJbeW63XV1qRhv-WWFFZ_re0p9P-nVG7Jyfpbkpu-Eg1nQiQlh00IxUII4z5Fx1YzyYD0zxcyH_SlAUoQaO0WpLRJAJEFAxduaymEztSJUJli7hVsZRYWGC4rFcYbJiDgEFA==")
-    },
     # api_key：chat_runrp
     "link_api": {
-        "base_url": "https://api.linkapi.org/v1/chat/completions",
-        "api_key": decrypt_message("gAAAAABow8ZswUlACpA9hOmG1AxERQC4EoFyPFDqlPZbAUC0g5K_cZ2jsA9j3tCg4nWy5oAgwDO2V25wciqij-qwaLQW-vLzI9joGVLNIhVBV98R902Kh0oAU_N0w3TXEmB9Klng87EIiSUO4FFYu0GSNN1vD56HXw==")
-    },
-    # api_key：chat_runrp
-    "nano-banana": {
         "base_url": "https://api.linkapi.org/v1/chat/completions",
         "api_key": decrypt_message("gAAAAABow8ZswUlACpA9hOmG1AxERQC4EoFyPFDqlPZbAUC0g5K_cZ2jsA9j3tCg4nWy5oAgwDO2V25wciqij-qwaLQW-vLzI9joGVLNIhVBV98R902Kh0oAU_N0w3TXEmB9Klng87EIiSUO4FFYu0GSNN1vD56HXw==")
     },

@@ -30,7 +30,7 @@ def decrypt_message(encrypted_message):
 
 if __name__ == "__main__":
     # SECRET_KEY 已设置在环境变量中
-    plaintext = "AIzaSyAk7HVNsaDxCxcGiux1DslRfLnR-qsSsEE"
+    plaintext = "sk-GFP62OhkTplx4DhkMNjwBhYAogftxZM6znbz2l8PDwc5CfBE"
 
     # 加密
     encrypted = encrypt_message(plaintext)
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     # 解密
     decrypted = decrypt_message(
-        "gAAAAABpO3MNDKf1O-dsNMBzvy7KUIxpV0FxC3iTzlD59FrS3inaLDL3JovrAN2F4JYLVUkHpT-qdMfUzD0Lv0YhvA_G8Srcwj1bBT7uxS8bcvFqPbR2srtuApsJzRk3f7H3RnaArKfu")
+        "gAAAAABow8ZswUlACpA9hOmG1AxERQC4EoFyPFDqlPZbAUC0g5K_cZ2jsA9j3tCg4nWy5oAgwDO2V25wciqij-qwaLQW-vLzI9joGVLNIhVBV98R902Kh0oAU_N0w3TXEmB9Klng87EIiSUO4FFYu0GSNN1vD56HXw==")
     print("解密后的信息:", decrypted)
 
     # 验证
