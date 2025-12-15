@@ -5,13 +5,21 @@ logger = logging.getLogger(__name__)
 
 # 预置模型
 DEFAULT_MODELS = {
-    # deepseek-chat / deepseek-reasoner
+    # deepseek-reasoner
     "deepseek-reasoner": {
         "label": "deepseek-reasoner",
         "supports_streaming": True,
         "default_temperature": 0.8,
         "client_name": "deepseek",
     },
+    # deepseek-chat
+    "deepseek-chat": {
+        "label": "deepseek-chat",
+        "supports_streaming": True,
+        "default_temperature": 0.8,
+        "client_name": "deepseek",
+    },
+    # link_api
     "gemini-2.5-pro": {
         "label": "gemini-2.5-pro",                  # $0.00125/K tokens（default）
         "supports_streaming": True,
@@ -43,6 +51,7 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
+    # google_api
     "google_api": {
         "label": "gemini-2.5-flash",
         "supports_streaming": True,
