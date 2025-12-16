@@ -128,36 +128,6 @@ async def execute_model_for_app(
     chunks = []
     got_done_flag = False
 
-    # -----------------------------
-    # 🎨 图片生成分支
-    # -----------------------------
-    # if image:
-    #     payload = {
-    #         "prompt": user_input,
-    #         "model": model_details.get("image_model", model_details["label"]),  # 允许不同图片模型
-    #     }
-    #     image_url = client_settings["base_url"].replace("/v1/chat/completions", "/v1/images/generations")
-    #
-    #     try:
-    #         async with httpx.AsyncClient(timeout=60) as client:
-    #             response = await client.post(image_url, headers=headers, json=payload)
-    #
-    #         if response.status_code != 200:
-    #             yield {"type": "error", "error": f"图片接口返回非200状态码: {response.status_code}"}
-    #             return
-    #
-    #         data = response.json()
-    #         if "data" in data and isinstance(data["data"], list) and len(data["data"]) > 0:
-    #             img_data = data["data"][0]
-    #             img_url = img_data.get("url") or img_data.get("b64_json")
-    #             yield {"type": "image", "url": img_url}
-    #         else:
-    #             yield {"type": "error", "error": "图片接口返回无效数据"}
-    #
-    #     except Exception as e:
-    #         yield {"type": "error", "error": f"图片生成失败: {e}"}
-    #     return
-
     try:
         async with httpx.AsyncClient(timeout=None) as client:
             if stream:

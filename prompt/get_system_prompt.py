@@ -8,6 +8,8 @@ PROMPT_FILES = {
     "恋爱模拟器": "system_prompt_01.md",
     "安清雪": "system_prompt_02.md",
     "女神反转系统": "system_prompt_03.md",
+    "角色卡设定架构师": "user_card_prompt.md",
+    "game": "game.md",
     "Python":"python.md",
     "nsfw": "nsfw.md",
     "temp": "temp.md",
