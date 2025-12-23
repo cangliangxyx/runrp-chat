@@ -98,8 +98,10 @@ class ChatHistory:
             str: 提取的故事星记忆回廊，如果没有找到则返回 None
         """
         # 匹配 ##时间戳## 到文本结尾的部分（包含时间戳本身）
-        pattern = r'##\s*星记忆回廊-\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*##.*'
+        # pattern = r'**\s*动态角色状态机-\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*##.*'
+        pattern = r'\动态角色状态机-\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}[\s\S]*$'
         match = re.search(pattern, assistant_text, re.DOTALL)
+        print("match = ",match)
         if match:
             return match.group(0).strip()
 
