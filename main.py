@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from config.models import list_model_ids
 from prompt.get_system_prompt import PROMPT_FILES, get_system_prompt
+from utils import read_chat_history
 from utils.new_stream_chat_app import execute_model_for_app, chat_history
 from utils.persona_loader import list_personas, get_default_personas
 
@@ -213,6 +214,15 @@ async def spa_fallback(full_path: str):
         return FileResponse(index_file)
 
     return HTMLResponse("Frontend not built", status_code=404)
+
+
+# -----------------------------
+# 读取最后一条历史记录
+# -----------------------------
+@app.get("/get_chat_history")
+async def get_chat_history():
+    data = read_chat_history.main()
+    return data
 
 # -----------------------------
 # 启动服务（生产安全版）
