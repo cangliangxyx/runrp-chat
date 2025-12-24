@@ -254,8 +254,8 @@ async def execute_model_for_app(
 
 
 async def test_stream():
-    model_name = "gemini-3-pro-preview-thinking"
-    user_input = "请用告诉我现在使用的模型版本、功能特色、发布日期等关键信息"
+    model_name = "claude-sonnet-4-5"
+    user_input = "请用告诉我现在使用的模型版本、功能特色、发布日期等详细信息"
     system_instructions = "你是一个系统工程师"
     personas = [""]
 

@@ -20,36 +20,32 @@ DEFAULT_MODELS = {
         "client_name": "deepseek",
     },
     # link_api for gemini
-    "gemini-2.5-pro": {
-        "label": "gemini-2.5-pro",                  # $0.00125/K tokens（default）
+    "gemini-3-flash-preview": {
+        "label": "gemini-3-flash-preview",  # $0.0005/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
     "gemini-3-flash-preview-thinking": {
-        "label": "gemini-3-flash-preview-thinking-*",  # $0.00125/K tokens（default）
-        "supports_streaming": True,
-        "default_temperature": 0.4,
-        "client_name": "link_api",
-    },
-    "gemini-3-pro-preview": {
-        "label": "gemini-3-pro-preview",  # $0.002/K tokens（default）
+        "label": "gemini-3-flash-preview-thinking-*",  # $0.002/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
     "gemini-3-pro-preview-thinking": {
-        "label": "gemini-3-pro-preview-thinking-*",                # $0.002/K tokens（default）
+        "label": "gemini-3-pro-preview-thinking-*",  # $0.002/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
+    # link_api for grok
     "grok-4.1": {
         "label": "grok-4.1",       # $0.02/次（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
+    # link_api for chatgpt
     "gpt-5.2-thinking": {
         "label": "gpt-5.2-thinking",  # $0.05/次（vip）
         # "label": "gpt-4o-mini",               # $0.00015/K（vip）
@@ -57,8 +53,9 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
+    # link_api for claude
     "claude-sonnet-4-5": {
-        "label": "claude-sonnet-4-5-20250929",      # $0.0024/K tokens（cc）
+        "label": "claude-opus-4-5-20251101-thinking",  # $0.0024/K tokens（cc）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
