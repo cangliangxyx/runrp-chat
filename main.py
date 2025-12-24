@@ -222,6 +222,7 @@ async def spa_fallback(full_path: str):
 @app.get("/get_chat_history")
 async def get_chat_history():
     data = read_chat_history.main()
+    print("read chat history")
     return data
 
 # -----------------------------

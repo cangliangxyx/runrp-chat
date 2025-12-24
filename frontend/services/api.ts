@@ -84,6 +84,17 @@ export const api = {
       }
   },
 
+    getChatHistory: async (): Promise<any> => {
+        try {
+            const res = await fetch('/get_chat_history');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            console.warn('Backend unavailable for history', e);
+            return {error: "Failed to fetch history from backend."};
+        }
+    },
+
   chat: async (
     model: string,
     prompt: string,

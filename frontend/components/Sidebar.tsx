@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {ChatConfig, Persona} from '../types.ts';
-import {RefreshIcon, TrashIcon, UserIcon, XIcon} from './Icons.tsx';
+import {FileTextIcon, RefreshIcon, TrashIcon, UserIcon, XIcon} from './Icons.tsx';
 import {api} from '../services/api.ts';
 
 interface SidebarProps {
@@ -24,6 +24,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClearHistory,
   onRemoveLast,
 }) => {
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [historyData, setHistoryData] = useState<any>(null);
+
   // Sync selected personas with backend when they change locally
   const handlePersonaToggle = async (name: string) => {
     const updated = personas.map((p) =>
@@ -41,6 +44,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     await api.updatePersonas(selectedNames);
   };
 
+    const handleViewHistory = async () => {
+        try {
+            const data = await api.getChatHistory();
+            setHistoryData(data);
+            setIsHistoryModalOpen(true);
+        } catch (e) {
+            console.error("Failed to fetch history", e);
+        }
+    };
+
   return (
     <>
       {/* Backdrop for mobile */}
@@ -50,6 +63,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onClose}
         />
       )}
+
+        {/* History Modal */}
+        {isHistoryModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                 onClick={() => setIsHistoryModalOpen(false)}>
+                <div
+                    className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200"
+                    onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                        <div className="flex items-center gap-2">
+                            <FileTextIcon className="w-5 h-5 text-blue-400"/>
+                            <h3 className="text-lg font-semibold text-white">Full History Data</h3>
+                        </div>
+                        <button onClick={() => setIsHistoryModalOpen(false)}
+                                className="text-gray-400 hover:text-white transition-colors">
+                            <XIcon className="w-5 h-5"/>
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                     <pre
+                         className="text-xs md:text-sm font-mono text-green-400 whitespace-pre-wrap bg-gray-950 p-4 rounded-lg border border-gray-800 break-words">
+                        {JSON.stringify(historyData, null, 2)}
+                     </pre>
+                    </div>
+                    <div className="p-3 border-t border-gray-800 flex justify-end">
+                        <button onClick={() => setIsHistoryModalOpen(false)}
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
       {/* Sidebar Container */}
       <div
@@ -176,6 +222,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
               </div>
             </label>
+
+              {/* View JSON History Button */}
+              <button
+                  onClick={handleViewHistory}
+                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors border border-gray-800 hover:border-gray-700"
+              >
+                  <span className="text-sm font-medium">View JSON History</span>
+                  <FileTextIcon className="w-4 h-4"/>
+              </button>
           </div>
         </div>
 
@@ -193,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <option value="xl">Extra Large</option>
                   </select>
               </div>
-              <p className="text-[10px] text-gray-600 text-center">Nebula Chat v1.1</p>
+              <p className="text-[10px] text-gray-600 text-center">Nebula Chat v1.2</p>
         </div>
       </div>
     </>
