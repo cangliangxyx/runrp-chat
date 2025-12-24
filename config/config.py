@@ -15,7 +15,8 @@ CLIENT_CONFIGS = {
     # api_key：chat_runrp
     "link_api": {
         "base_url": "https://api.linkapi.org/v1/chat/completions",
-        "api_key": decrypt_message("gAAAAABow8ZswUlACpA9hOmG1AxERQC4EoFyPFDqlPZbAUC0g5K_cZ2jsA9j3tCg4nWy5oAgwDO2V25wciqij-qwaLQW-vLzI9joGVLNIhVBV98R902Kh0oAU_N0w3TXEmB9Klng87EIiSUO4FFYu0GSNN1vD56HXw==")
+        "api_key": decrypt_message(
+            "gAAAAABpS4zxZ2eSYYKKWQg3utIPeohS4XCL2LsNeJTCeHfOmxySJsaPt3KDYGvFZEIktgHo2qMKz2ALp48_YrPq6a4NoEvD2LYyop6zv-c3ZdXcuwYhqN7TztuteiyX4DvutiJrcHuyA3FCt8cXXzZ_IQ04QO07ig==")
     },
     # api_key: chat_runrp_gemini
     "runrp_gemini": {

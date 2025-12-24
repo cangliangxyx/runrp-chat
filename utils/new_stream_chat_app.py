@@ -274,8 +274,8 @@ async def test_stream():
 
 
 if __name__ == "__main__":
-    # asyncio.run(test_stream())
+    asyncio.run(test_stream())
 
-    messages = [{"content": "123123"}]
-    model_label = "gemini-3-pro-preview-thinking-*"
-    total_tokens(messages, model_label)
+    # messages = [{"content": "123123"}]
+    # model_label = "gemini-3-pro-preview-thinking-*"
+    # total_tokens(messages, model_label)
