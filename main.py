@@ -9,8 +9,8 @@ from fastapi.staticfiles import StaticFiles
 
 from config.models import list_model_ids
 from prompt.get_system_prompt import PROMPT_FILES, get_system_prompt
+from utils.new_stream_chat_app import execute_model_for_app, chat_history
 from utils.persona_loader import list_personas, get_default_personas
-from utils.stream_chat_app import execute_model_for_app, chat_history
 
 # -----------------------------
 # 日志配置
@@ -85,16 +85,20 @@ async def chat(
     try:
         if stream_enabled:
             async def event_stream():
-                async for chunk in execute_model_for_app(
-                    model_name=model,
-                    user_input=prompt,
-                    system_instructions=system_prompt,
-                    personas=current_personas,
-                    web_input=web_input,
-                    nsfw=nsfw_enabled,
-                    stream=True
-                ):
-                    yield json.dumps(chunk, ensure_ascii=False) + "\n"
+                try:
+                    async for chunk in execute_model_for_app(
+                            model_name=model,
+                            user_input=prompt,
+                            system_instructions=system_prompt,
+                            personas=current_personas,
+                            web_input=web_input,
+                            nsfw=nsfw_enabled,
+                            stream=True
+                    ):
+                        yield json.dumps(chunk, ensure_ascii=False) + "\n"
+                except Exception as e:
+                    logger.error("[chat-stream] 中断", exc_info=True)
+                    yield json.dumps({"error": "stream interrupted"}, ensure_ascii=False) + "\n"
             return StreamingResponse(event_stream(), media_type="application/json")
         else:
             # 非流式：一次性获取完整结果
@@ -219,7 +223,5 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8080,
-        reload=True,
-        log_level="info"
+        port=8080
     )

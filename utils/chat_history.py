@@ -101,7 +101,7 @@ class ChatHistory:
         # pattern = r'**\s*动态角色状态机-\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*##.*'
         pattern = r'\动态角色状态机-\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}[\s\S]*$'
         match = re.search(pattern, assistant_text, re.DOTALL)
-        print("match = ",match)
+        # print("match = ",match)
         if match:
             return match.group(0).strip()
 

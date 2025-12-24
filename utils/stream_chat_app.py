@@ -150,7 +150,6 @@ async def execute_model_for_app(
                         if data_str == "[DONE]":
                             got_done_flag = True
                             break
-
                         delta_content = parse_stream_chunk(data_str)
                         if delta_content:
                             chunks.append(delta_content)

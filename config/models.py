@@ -9,19 +9,31 @@ DEFAULT_MODELS = {
     "deepseek-reasoner": {
         "label": "deepseek-reasoner",
         "supports_streaming": True,
-        "default_temperature": 0.8,
+        "default_temperature": 0.4,
         "client_name": "deepseek",
     },
     # deepseek-chat
     "deepseek-chat": {
         "label": "deepseek-chat",
         "supports_streaming": True,
-        "default_temperature": 0.8,
+        "default_temperature": 0.4,
         "client_name": "deepseek",
     },
-    # link_api
+    # link_api for gemini
     "gemini-2.5-pro": {
         "label": "gemini-2.5-pro",                  # $0.00125/K tokens（default）
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
+    "gemini-3-flash-preview-thinking": {
+        "label": "gemini-3-flash-preview-thinking-*",  # $0.00125/K tokens（default）
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
+    "gemini-3-pro-preview": {
+        "label": "gemini-3-pro-preview",  # $0.002/K tokens（default）
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
