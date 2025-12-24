@@ -50,8 +50,8 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    "gpt-5-chat-latest": {
-        "label": "gpt-5.1-all",  # $0.001/K（vip）
+    "gpt-5.2-thinking": {
+        "label": "gpt-5.2-thinking",  # $0.05/次（vip）
         # "label": "gpt-4o-mini",               # $0.00015/K（vip）
         "supports_streaming": True,
         "default_temperature": 0.4,

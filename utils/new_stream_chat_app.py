@@ -6,6 +6,7 @@ import logging
 from typing import AsyncGenerator
 
 import httpx
+import tiktoken
 from colorama import init
 
 from config.config import CLIENT_CONFIGS
@@ -58,6 +59,21 @@ async def get_async_client() -> httpx.AsyncClient:
             _async_client = httpx.AsyncClient(timeout=_build_timeout())
         return _async_client
 
+
+# -----------------------------
+# 工具函数
+# -----------------------------
+# 使用 tiktoken 计算总 token 数
+def total_tokens(messages, model_label: str):
+    try:
+        encoding = tiktoken.encoding_for_model(model_label)
+    except KeyError:
+        logger.warning(f"模型 {model_label} 无法自动映射 tokenizer，使用 cl100k_base 估算")
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    total = sum(len(encoding.encode(msg.get("content", ""))) for msg in messages)
+    logger.info(f"[Token统计] messages 总 token 数(估算): {total}")
+    return total
 
 # -----------------------------
 # 统一的流解析函数
@@ -129,8 +145,8 @@ async def execute_model_for_app(
     - 并发流式限流
     - 不阻塞 event loop
     """
-    logger.info(f"[执行模型] model={model_name} stream={stream} nsfw={nsfw}")
 
+    logger.info(f"[执行模型] model={model_name} stream={stream} nsfw={nsfw}")
     # ---------- 构建 messages ----------
     messages = build_messages(
         system_instructions,
@@ -141,29 +157,26 @@ async def execute_model_for_app(
         nsfw=nsfw,
         max_history_entries=MAX_HISTORY_ENTRIES,
     )
-
     if DEBUG_STREAM:
         print_messages_colored(messages)
-
     model_details = model_registry(model_name)
     client_settings = CLIENT_CONFIGS[model_details["client_name"]]
-
     payload = {
         "model": model_details["label"],
         "stream": stream,
         "messages": messages,
     }
-
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {client_settings['api_key']}",
     }
-
     chunks: list[str] = []
+
+    # total_tokens
+    total_tokens(messages, model_details["label"])
 
     try:
         client = await get_async_client()
-
         # ---------- 流式模式 ----------
         if stream:
             async with _stream_semaphore:
@@ -173,33 +186,25 @@ async def execute_model_for_app(
                         headers=headers,
                         json=payload,
                 ) as response:
-
                     if response.status_code != 200:
                         yield {
                             "type": "error",
                             "error": f"模型接口返回状态码 {response.status_code}",
                         }
                         return
-
                     async for line in response.aiter_lines():
                         if not line or not line.startswith("data:"):
                             continue
-
                         data_str = line[5:].strip()
-
                         if data_str == "[DONE]":
                             break
-
                         delta = parse_stream_chunk(data_str)
                         if not delta:
                             continue
-
                         chunks.append(delta)
                         yield {"type": "chunk", "content": delta}
-
             # 流自然结束（即使无 DONE）
             full_text = "".join(chunks)
-
         # ---------- 非流式模式 ----------
         else:
             response = await client.post(
@@ -207,16 +212,13 @@ async def execute_model_for_app(
                 headers=headers,
                 json=payload,
             )
-
             if response.status_code != 200:
                 yield {
                     "type": "error",
                     "error": f"模型接口返回状态码 {response.status_code}",
                 }
                 return
-
             data = response.json()
-
             if "choices" in data:
                 for choice in data["choices"]:
                     text = (
@@ -227,9 +229,7 @@ async def execute_model_for_app(
                     if text:
                         chunks.append(text)
                         yield {"type": "chunk", "content": text}
-
             full_text = "".join(chunks)
-
     except httpx.TimeoutException:
         yield {"type": "error", "error": "模型请求超时"}
         return
@@ -240,7 +240,6 @@ async def execute_model_for_app(
         logger.exception("模型调用异常")
         yield {"type": "error", "error": str(e)}
         return
-
     # ---------- 保存历史 ----------
     if full_text.strip():
         if SAVE_STORY_SUMMARY_ONLY:
@@ -249,14 +248,12 @@ async def execute_model_for_app(
                 chat_history.add_entry(user_input, summary)
         else:
             chat_history.add_entry(user_input, full_text)
-
         chat_history.save_history()
-
     yield {"type": "end", "full": full_text}
 
 
 async def test_stream():
-    model_name = "deepseek-reasoner"
+    model_name = "gpt-5.2-thinking"
     user_input = "请用告诉我现在使用的模型版本、功能特色、发布日期等关键信息"
     system_instructions = "你是一个系统工程师"
     personas = [""]
@@ -277,4 +274,8 @@ async def test_stream():
 
 
 if __name__ == "__main__":
-    asyncio.run(test_stream())
+    # asyncio.run(test_stream())
+
+    messages = [{"content": "123123"}]
+    model_label = "gemini-3-pro-preview-thinking-*"
+    total_tokens(messages, model_label)
