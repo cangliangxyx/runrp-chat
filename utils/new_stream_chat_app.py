@@ -173,7 +173,7 @@ async def execute_model_for_app(
     chunks: list[str] = []
 
     # total_tokens
-    print(payload)
+    # print(payload)
     total_tokens(messages, model_details["label"])
 
     try:
