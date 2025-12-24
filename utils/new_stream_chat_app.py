@@ -173,6 +173,7 @@ async def execute_model_for_app(
     chunks: list[str] = []
 
     # total_tokens
+    print(payload)
     total_tokens(messages, model_details["label"])
 
     try:
@@ -253,14 +254,14 @@ async def execute_model_for_app(
 
 
 async def test_stream():
-    model_name = "gpt-5.2-thinking"
+    model_name = "gemini-3-pro-preview-thinking"
     user_input = "请用告诉我现在使用的模型版本、功能特色、发布日期等关键信息"
     system_instructions = "你是一个系统工程师"
     personas = [""]
 
     buffer = ""
     async for chunk in execute_model_for_app(
-            model_name, user_input, system_instructions, personas, stream=True
+            model_name, user_input, system_instructions, personas, stream=True, nsfw=False
     ):
         if chunk["type"] == "chunk":
             buffer += chunk["content"]
