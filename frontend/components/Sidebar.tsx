@@ -51,6 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsHistoryModalOpen(true);
         } catch (e) {
             console.error("Failed to fetch history", e);
+            setHistoryData({error: "Failed to load history"});
+            setIsHistoryModalOpen(true);
         }
     };
 
@@ -74,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div className="flex items-center justify-between p-4 border-b border-gray-800">
                         <div className="flex items-center gap-2">
                             <FileTextIcon className="w-5 h-5 text-blue-400"/>
-                            <h3 className="text-lg font-semibold text-white">Full History Data</h3>
+                            <h3 className="text-lg font-semibold text-white">History Data</h3>
                         </div>
                         <button onClick={() => setIsHistoryModalOpen(false)}
                                 className="text-gray-400 hover:text-white transition-colors">
@@ -226,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* View JSON History Button */}
               <button
                   onClick={handleViewHistory}
-                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors border border-gray-800 hover:border-gray-700"
+                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors border border-gray-800 hover:border-gray-700 mt-2"
               >
                   <span className="text-sm font-medium">View JSON History</span>
                   <FileTextIcon className="w-4 h-4"/>

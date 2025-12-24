@@ -9,7 +9,6 @@ from fastapi.staticfiles import StaticFiles
 
 from config.models import list_model_ids
 from prompt.get_system_prompt import PROMPT_FILES, get_system_prompt
-from utils import read_chat_history
 from utils.new_stream_chat_app import execute_model_for_app, chat_history
 from utils.persona_loader import list_personas, get_default_personas
 
@@ -194,6 +193,24 @@ async def remove_last_entry():
         logger.error(f"[remove_last_entry] 失败: {e}", exc_info=True)
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+
+# -----------------------------
+# 读取最后一条历史记录
+# -----------------------------
+@app.get("/get_chat_history")
+async def get_chat_history():
+    data = {'女性角色档案': {'姓名': '苏糯糯', '年龄': 20, '身材/面容/衣着/发型': 'x', '三围罩杯': 'x', '性格': 'x',
+                             '位置': 'x', '与我的关系': 'x', '好感度': 99, '主动性': 85,
+                             'xx次数': {'a': 3, 'b': 1, 'c': 0, 'd': 1}, '当前活动': 'x', '特殊技巧': ['1', '2', '3']},
+            '历史章节': {'ID': '03', '时间': '2024-10-26 22:35', '章节': 'name', '人物': '常亮，苏糯糯',
+                         '地点': '浴室洗手台', 'Event': 'xxxx'},
+            '下章故事框架': {'章节信息': '第4章 无法落地的索求', '目标': '123123', '障碍': '123123',
+                             '核心行动': '123123', '结局': '123123'}}
+    # data = read_chat_history.main()
+    print("read chat history")
+    # return data
+    return JSONResponse(data)
+
 # SPA 前端兜底路由（必须放在所有 API 之后）
 @app.get("/{full_path:path}", response_class=HTMLResponse)
 async def spa_fallback(full_path: str):
@@ -206,7 +223,8 @@ async def spa_fallback(full_path: str):
         or full_path.startswith("clear_history") \
         or full_path.startswith("remove_last_entry") \
         or full_path.startswith("assets") \
-        or full_path.startswith("static"):
+            or full_path.startswith("get_chat_history") \
+            or full_path.startswith("static"):
         return JSONResponse({"error": "Not Found"}, status_code=404)
 
     index_file = os.path.join(FRONTEND_DIST, "index.html")
@@ -216,14 +234,6 @@ async def spa_fallback(full_path: str):
     return HTMLResponse("Frontend not built", status_code=404)
 
 
-# -----------------------------
-# 读取最后一条历史记录
-# -----------------------------
-@app.get("/get_chat_history")
-async def get_chat_history():
-    data = read_chat_history.main()
-    print("read chat history")
-    return data
 
 # -----------------------------
 # 启动服务（生产安全版）

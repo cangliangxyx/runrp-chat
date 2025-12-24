@@ -87,11 +87,15 @@ export const api = {
     getChatHistory: async (): Promise<any> => {
         try {
             const res = await fetch('/get_chat_history');
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('text/html')) {
+                throw new Error('Endpoint returned HTML. Backend likely unreachable.');
+            }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
-        } catch (e) {
+        } catch (e: any) {
             console.warn('Backend unavailable for history', e);
-            return {error: "Failed to fetch history from backend."};
+            return {error: "Failed to fetch history from backend.", details: e.message};
         }
     },
 
