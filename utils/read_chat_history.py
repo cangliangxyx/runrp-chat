@@ -76,17 +76,24 @@ def extract_assistant_json(text: str) -> dict:
 
 def main():
     if not CHAT_HISTORY_PATH.exists():
-        print("{}")
-        return
-    with CHAT_HISTORY_PATH.open("r", encoding="utf-8") as f:
-        data = json.load(f)
+        return {"message": "暂无历史记录"}
+
+    try:
+        with CHAT_HISTORY_PATH.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return {"message": "暂无历史记录"}
+
     if not isinstance(data, list) or not data:
-        print("{}")
-        return
+        return {"message": "暂无历史记录"}
+
     assistant_text = data[-1].get("assistant", "")
     parsed = extract_assistant_json(assistant_text)
-    return parsed
 
+    if not parsed:
+        return {"message": "暂无历史记录"}
+
+    return parsed
 
 if __name__ == "__main__":
     print(main())
