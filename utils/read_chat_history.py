@@ -8,25 +8,36 @@ CHAT_HISTORY_PATH = PROJECT_ROOT / "log" / "chat_history.json"
 
 def extract_assistant_json(text: str) -> dict:
     """
-    解析 ```json``` 代码块中的“伪 JSON”（含多段顶级对象、嵌套花括号、异常 key）
-    返回标准 dict
+    解析 ```json``` / ```JSON``` 代码块
+    1. 优先整体解析完整 JSON
+    2. 失败时再进行伪 JSON 修复
     """
     if not isinstance(text, str):
         return {}
 
-    block = re.search(r"```json\s*(.*?)\s*```", text, re.S)
+    block = re.search(
+        r"```json\s*(.*?)\s*```",
+        text,
+        re.S | re.I  # 关键：忽略大小写
+    )
     if not block:
         return {}
 
-    content = block.group(1)
+    content = block.group(1).strip()
     content = content.replace("**", "")
 
+    # ---------- 第一优先：整体解析 ----------
+    try:
+        return json.loads(content)
+    except Exception:
+        pass
+
+    # ---------- fallback：伪 JSON 修复 ----------
     def fix_keys(s: str) -> str:
         # 修复 key 中多余的冒号，如 "障碍:"
         return re.sub(r'"([^"]+?):"\s*:', r'"\1":', s)
 
-    def extract_object(s: str, start: int) -> tuple[str, int] | tuple[None, None]:
-        # 从 start 处提取一个平衡的 {...}
+    def extract_object(s: str, start: int):
         if start >= len(s) or s[start] != "{":
             return None, None
         depth = 0
@@ -44,19 +55,16 @@ def extract_assistant_json(text: str) -> dict:
     n = len(content)
 
     while i < n:
-        # 匹配 "标题":
         m = re.search(r'"([^"]+)"\s*:\s*', content[i:])
         if not m:
             break
+
         key = m.group(1).rstrip(":")
-        key_start = i + m.start()
         val_start = i + m.end()
 
-        # 跳过空白
         while val_start < n and content[val_start].isspace():
             val_start += 1
 
-        # 仅处理对象值 {...}
         if val_start < n and content[val_start] == "{":
             obj_text, next_pos = extract_object(content, val_start)
             if obj_text:
@@ -68,7 +76,6 @@ def extract_assistant_json(text: str) -> dict:
                 i = next_pos
                 continue
 
-        # 否则前进避免死循环
         i = val_start + 1
 
     return result
@@ -94,6 +101,7 @@ def main():
         return {"message": "暂无历史记录"}
 
     return parsed
+
 
 if __name__ == "__main__":
     print(main())
