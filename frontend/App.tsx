@@ -484,7 +484,9 @@ function App() {
                       onClick={(e) => handleMessageClick(e, msg.id)}
                       className={`relative cursor-pointer max-w-[90%] md:max-w-[80%] rounded-2xl px-4 py-3 md:px-5 md:py-3.5 leading-relaxed shadow-md transition-shadow hover:shadow-lg ${
                     msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-none'
+                        ? 'bg-stone-700 text-stone-100 border border-stone-600/40 rounded-br-none' //（卡色）
+                        // ? 'bg-indigo-700 text-indigo-100 border border-indigo-600/40 rounded-br-none'（青色）
+                        // ? 'bg-blue-700 text-gray-100 border border-blue-600/50 rounded-br-none'
                       : msg.role === 'system'
                       ? 'bg-red-900/50 border border-red-800 text-red-200'
                       : 'bg-gray-800 text-gray-100 border border-gray-700/50 rounded-bl-none'
