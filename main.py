@@ -194,7 +194,6 @@ async def remove_last_entry():
         logger.error(f"[remove_last_entry] 失败: {e}", exc_info=True)
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
-
 # -----------------------------
 # 读取最后一条历史记录
 # -----------------------------
@@ -218,14 +217,10 @@ async def spa_fallback(full_path: str):
             or full_path.startswith("get_chat_history") \
             or full_path.startswith("static"):
         return JSONResponse({"error": "Not Found"}, status_code=404)
-
     index_file = os.path.join(FRONTEND_DIST, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
-
     return HTMLResponse("Frontend not built", status_code=404)
-
-
 
 # -----------------------------
 # 启动服务（生产安全版）
