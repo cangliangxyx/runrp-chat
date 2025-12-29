@@ -569,7 +569,7 @@ function App() {
                 onKeyDown={handleKeyDown}
                 placeholder="Message..."
                 // text-base on mobile prevents iOS zoom, text-sm on desktop looks cleaner
-                className="w-full bg-gray-900 border border-gray-800 text-gray-100 rounded-xl pl-4 pr-12 md:pr-14 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none h-[50px] md:h-[60px] max-h-[150px] shadow-inner transition-all text-base md:text-sm"
+                className="w-full bg-gray-950/50 hover:bg-gray-900/50 focus:bg-gray-900 border border-gray-800/60 text-gray-200 placeholder-gray-600 rounded-xl pl-4 pr-12 md:pr-14 py-3 md:py-4 focus:outline-none focus:ring-1 focus:ring-blue-500/30 focus:border-blue-500/40 resize-none h-[50px] md:h-[60px] max-h-[150px] shadow-sm transition-all text-base md:text-sm"
                 style={{ minHeight: '50px' }}
               />
               <button
