@@ -2,7 +2,7 @@
 from pathlib import Path
 
 PROMPT_FILES = {
-    "聊天": "chat_companion.md",
+    "聊天": "system_prompt_def.md",
     "提示词助手": "system_prompt_assist.md",
     "book": "book.md",
     "恋爱模拟器": "system_prompt_01.md",
@@ -26,4 +26,4 @@ def get_system_prompt(name: str) -> str:
     except FileNotFoundError:
         raise FileNotFoundError(f"未找到系统提示文件: {file_path}")
 if __name__ == "__main__":
-    print(get_system_prompt("default"))
+    print(get_system_prompt("system_prompt_def.md"))
