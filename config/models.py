@@ -45,11 +45,20 @@ DEFAULT_MODELS = {
         "default_temperature": 0.4,
         "client_name": "link_api",
     },
-    # link_api for chatgpt
-    "gpt-5.2": {
+    # link_api for chatgpt gpt-4o-mini
+    "gpt-5-chat": {
         # "label": "gpt-5.2-thinking",  # $0.05/次（vip）
-        # "label": "gpt-5.2-2025-12-11",               # $0.00175/K（vip）
+        # "label": "gpt-5.2-2025-12-11",    # $0.00175/K（vip）
+        # "label": "gpt-5.2-chat-latest",    # $0.007/K（vip）
+        # "label": "gpt-5.1-thinking",    # $0.001/K（vip）
         "label": "gpt-5-chat",  # $0.00125/K
+        "supports_streaming": True,
+        "default_temperature": 0.4,
+        "client_name": "link_api",
+    },
+    # link_api for chatgpt gpt-4o-mini
+    "gpt-4o-mini": {
+        "label": "gpt-4o-mini",  # $0.01/次
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
