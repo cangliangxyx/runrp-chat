@@ -46,9 +46,10 @@ DEFAULT_MODELS = {
         "client_name": "link_api",
     },
     # link_api for chatgpt
-    "gpt-5.2-thinking": {
-        "label": "gpt-5.2-thinking",  # $0.05/次（vip）
-        # "label": "gpt-4o-mini",               # $0.00015/K（vip）
+    "gpt-5.2": {
+        # "label": "gpt-5.2-thinking",  # $0.05/次（vip）
+        # "label": "gpt-5.2-2025-12-11",               # $0.00175/K（vip）
+        "label": "gpt-5-chat",  # $0.00125/K
         "supports_streaming": True,
         "default_temperature": 0.4,
         "client_name": "link_api",
