@@ -2,7 +2,7 @@
 from pathlib import Path
 
 PROMPT_FILES = {
-    "聊天": "system_prompt_def.md",
+    "default": "system_prompt_def.md",
     "提示词助手": "system_prompt_assist.md",
     "book": "book.md",
     "恋爱模拟器": "system_prompt_01.md",
@@ -13,13 +13,14 @@ PROMPT_FILES = {
     "Python":"python.md",
     "nsfw": "nsfw.md",
     "temp": "temp.md",
+    "deepseek": "system_prompt_deepseek.md",
 }
 
 PROMPT_CACHE = {}
 
 def get_system_prompt(name: str) -> str:
     """根据名称获取系统 prompt，不存在则返回 default """
-    filename = PROMPT_FILES.get(name, PROMPT_FILES["book"])
+    filename = PROMPT_FILES.get(name, PROMPT_FILES["default"])
     file_path = Path(__file__).parent / filename
     try:
         return file_path.read_text(encoding="utf-8").strip()
